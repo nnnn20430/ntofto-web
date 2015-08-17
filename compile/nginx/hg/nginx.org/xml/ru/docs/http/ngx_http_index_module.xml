@@ -1,0 +1,84 @@
+<?xml version="1.0"?>
+
+<!--
+  Copyright (C) Igor Sysoev
+  Copyright (C) Nginx, Inc.
+  -->
+
+<!DOCTYPE module SYSTEM "../../../../dtd/module.dtd">
+
+<module name="Модуль ngx_http_index_module"
+        link="/ru/docs/http/ngx_http_index_module.html"
+        lang="ru"
+        rev="2">
+
+<section id="summary">
+
+<para>
+Модуль <literal>ngx_http_index_module</literal> обслуживает запросы,
+оканчивающиеся слэшом (‘<literal>/</literal>’).
+Такие запросы также могут обслуживаться модулями
+<link doc="ngx_http_autoindex_module.xml">ngx_http_autoindex_module</link>
+и
+<link doc="ngx_http_random_index_module.xml">ngx_http_random_index_module</link>.
+</para>
+
+</section>
+
+
+<section id="example" name="Пример конфигурации">
+
+<para>
+<example>
+location / {
+    index index.$geo.html index.html;
+}
+</example>
+</para>
+
+</section>
+
+
+<section id="directives" name="Директивы">
+
+<directive name="index">
+<syntax><value>файл</value> ...</syntax>
+<default>index.html</default>
+<context>http</context>
+<context>server</context>
+<context>location</context>
+
+<para>
+Определяет файлы, которые будут использоваться в качестве индекса.
+В имени файла можно использовать переменные.
+Наличие файлов проверяется в порядке их перечисления.
+В конце списка может стоять файл с абсолютным путём.
+Пример:
+<example>
+index index.$geo.html index.0.html /index.html;
+</example>
+</para>
+
+<para>
+Необходимо иметь в виду, что при использовании индексного файла делается
+внутреннее перенаправление и запрос может быть обработан уже в другом
+location’е.
+Например, в такой конфигурации:
+<example>
+location = / {
+    index index.html;
+}
+
+location / {
+    ...
+}
+</example>
+запрос “<literal>/</literal>” будет фактически обработан во
+втором location’е как “<literal>/index.html</literal>”.
+</para>
+
+</directive>
+
+</section>
+
+</module>

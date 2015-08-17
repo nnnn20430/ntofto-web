@@ -1,0 +1,78 @@
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="description" content="">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="author" content="">
+
+<title>Upload file</title>
+</head>
+
+<body>
+
+<form action="" id="uploadfileform">
+<p>Upload file:<p>
+<input style="float: left;" type="file" id="upload_file" />
+<button style="position: relative;" id="uploadfilebutton" type="button">Upload file</button>
+</form>
+<div id="response"></div>
+
+
+<script>
+document.getElementById("uploadfilebutton").onclick = upload;
+function upload()
+{
+	var file = document.getElementById('upload_file').files[0];
+	UploadRequestForm({'file': file}, function (response){document.getElementById('response').innerHTML = response;});
+}
+function headerStringToObject(string){
+ string = string.replace(/(.*)(,+)(.*)/g, "$1" + "!CommaChar!" + "$3");
+ var properties = string.split("\n").clean("");
+ var obj = {};
+ properties.forEach(function(property) {
+     var tup = property.split(':');
+     tup[0] = tup[0].replace(/^[.\s"']+|[.\s"']+$/g, "");
+     tup[1] = tup[1].replace(/^[.\s"']+|[.\s"']+$/g, "");
+     tup[1] = tup[1].replace("!CommaChar!", ",");
+     var isnum = /^\d+$/.test(tup[1]);
+     if(isnum){tup[1] = +tup[1]}
+     obj[tup[0]] = tup[1];
+ });
+ return obj;
+}
+function UploadRequestForm(datatosend, callback, headercallback){/* datatosend is a object-array to set it use {'key1': 'value1', 'key2': 'value2'} */
+ var serverresponse = '';
+ 
+ var formData = new FormData();
+
+ for (var prop in datatosend) {
+  if (datatosend.hasOwnProperty(prop)) { 
+   // or if (Object.prototype.hasOwnProperty.call(obj,prop)) for safety...
+   formData.append(prop, datatosend[prop]);
+  }
+ }
+ 
+
+ var request = new XMLHttpRequest();
+ request.open("POST", "./upload.php");
+ //request.upload.addEventListener('progress', uploadProgress, false);
+ request.addEventListener('load', function(){returnReponse(request);}, false);
+ request.addEventListener('error', function(){returnReponse('error');}, false);
+ request.addEventListener('abort', function(){returnReponse('abort');}, false);
+ request.send(formData);
+
+ function returnReponse(response){
+  serverresponse = response.responseText;
+  if(headercallback != null){
+   headercallback(headerStringToObject(response.getAllResponseHeaders()));
+   /*returns object to get value of header you want just do obj['header name']*/
+  }
+  if(callback != null){
+   callback(serverresponse);
+  }
+ }
+}
+</script>
+</body>
+</html>

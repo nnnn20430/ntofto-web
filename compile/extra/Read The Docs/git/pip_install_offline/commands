@@ -1,0 +1,11 @@
+to download:
+pip install --download ./packages/ -r ./pip_requirements.txt
+
+to install:
+pip install --no-index --find-links="file://$PWD/packages/" -r ./pip_requirements.txt
+
+sudo apt-get install python-django python-django-taggit
+
+
+to download everything:
+wget --quiet -O- https://pypi.python.org/simple/ | grep -o "href='.*'" | cut -b "7-" | cut --delimiter="'" -f 1 | tr '\n' ' ' | xargs -n 1 pip install --no-dependencies --allow-all-external --no-install --download ./packages/

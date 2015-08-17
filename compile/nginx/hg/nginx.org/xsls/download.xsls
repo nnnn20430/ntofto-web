@@ -1,0 +1,81 @@
+<!--
+  Copyright (C) Igor Sysoev
+  Copyright (C) Nginx, Inc.
+  -->
+
+X:stylesheet {
+
+X:template = "download" {
+    X:var last="@last"
+    X:for-each "document(concat($XML, '/versions.xml'))
+                /versions/download[@tag = current()/@tag]" {
+        <table width="100%">
+
+        !! "item[position() &lt;= $last]";
+
+        </table>
+    }
+}
+
+
+X:template = "download/item" {
+    <tr>
+        <td width="20%">
+        X:if "position() = 1" {
+            <a>
+            X:attribute "href" {
+                X:text{/} !{$LANG} X:text{/CHANGES}
+                X:if "$LANG != 'en'" { X:text{.} !{$LANG} }
+                X:if "../@changes != ''" { X:text{-} !{../@changes} }
+            }
+            X:text{CHANGES}
+            X:if "$LANG != 'en'" { X:text{.} !{$LANG} }
+            X:if "../@changes != ''" { X:text{-} !{../@changes} }
+            </a>
+        }
+        </td>
+
+        <td width="20%">
+        <a>
+        X:attribute "href" {
+            X:text {/download/nginx-} !{@ver} X:text {.tar.gz}
+        }
+        X:text {nginx-} !{@ver}
+        </a>
+
+        X:if "@pgp = 'yes'" {
+            X:text {&#xA0; }
+            <a>
+            X:attribute "href" {
+                X:text {/download/nginx-} !{@ver} X:text {.tar.gz.asc}
+            }
+            X:text {pgp}
+            </a>
+        }
+        </td>
+
+        <td>
+        X:if "@win= 'yes'" {
+            <a>
+            X:attribute "href" {
+                X:text {/download/nginx-} !{@ver} X:text {.zip}
+            }
+            X:text {nginx/Windows-} !{@ver}
+            </a>
+
+            X:if "@pgp = 'yes'" {
+                X:text {&#xA0; }
+                <a>
+                X:attribute "href" {
+                    X:text {/download/nginx-} !{@ver} X:text {.zip.asc}
+                }
+                X:text {pgp}
+                </a>
+            }
+        }
+        </td>
+
+    </tr>
+}
+
+}

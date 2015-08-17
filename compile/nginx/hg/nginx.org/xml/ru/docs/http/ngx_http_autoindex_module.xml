@@ -1,0 +1,116 @@
+<?xml version="1.0"?>
+
+<!--
+  Copyright (C) Igor Sysoev
+  Copyright (C) Nginx, Inc.
+  -->
+
+<!DOCTYPE module SYSTEM "../../../../dtd/module.dtd">
+
+<module name="Модуль ngx_http_autoindex_module"
+        link="/ru/docs/http/ngx_http_autoindex_module.html"
+        lang="ru"
+        rev="3">
+
+<section id="summary">
+
+<para>
+Модуль <literal>ngx_http_autoindex_module</literal> обслуживает запросы,
+оканчивающиеся слэшом (‘<literal>/</literal>’), и выдаёт листинг каталога.
+Обычно запрос попадает к модулю <literal>ngx_http_autoindex_module</literal>,
+когда модуль <link doc="ngx_http_index_module.xml">ngx_http_index_module</link>
+не нашёл индексный файл.
+</para>
+
+</section>
+
+
+<section id="example" name="Пример конфигурации">
+
+<para>
+<example>
+location / {
+    autoindex on;
+}
+</example>
+</para>
+
+</section>
+
+
+<section id="directives" name="Директивы">
+
+<directive name="autoindex">
+<syntax><literal>on</literal> | <literal>off</literal></syntax>
+<default>off</default>
+<context>http</context>
+<context>server</context>
+<context>location</context>
+
+<para>
+Разрешает или запрещает вывод листинга каталога.
+</para>
+
+</directive>
+
+
+<directive name="autoindex_exact_size">
+<syntax><literal>on</literal> | <literal>off</literal></syntax>
+<default>on</default>
+<context>http</context>
+<context>server</context>
+<context>location</context>
+
+<para>
+Для <link id="autoindex_format">формата</link> HTML
+определяет, как выводить размеры файлов в листинге
+каталога: точно или округляя до килобайт, мегабайт и гигабайт.
+</para>
+
+</directive>
+
+
+<directive name="autoindex_format">
+<syntax>
+    <literal>html</literal> |
+    <literal>xml</literal> |
+    <literal>json</literal> |
+    <literal>jsonp</literal></syntax>
+<default>html</default>
+<context>http</context>
+<context>server</context>
+<context>location</context>
+<appeared-in>1.7.9</appeared-in>
+
+<para>
+Задаёт формат вывода листинга каталога.
+</para>
+
+<para>
+При использовании формата JSONP имя callback-функции
+задаётся в аргументе запроса <literal>callback</literal>.
+Если аргумент отсутствует или имеет пустое значение,
+то используется формат JSON.
+</para>
+
+</directive>
+
+
+<directive name="autoindex_localtime">
+<syntax><literal>on</literal> | <literal>off</literal></syntax>
+<default>off</default>
+<context>http</context>
+<context>server</context>
+<context>location</context>
+
+<para>
+Для <link id="autoindex_format">формата</link> HTML
+определяет, в какой временной зоне выводить время в листинге
+каталога: в локальной или в UTC.
+</para>
+
+</directive>
+
+</section>
+
+</module>

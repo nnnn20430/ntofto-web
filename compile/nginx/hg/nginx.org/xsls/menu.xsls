@@ -1,0 +1,98 @@
+<!--
+  Copyright (C) Igor Sysoev
+  Copyright (C) Nginx, Inc.
+  -->
+
+X:stylesheet {
+
+X:template = "menu/item" {
+
+    <!--
+      --  variables are not allowed in a template match predicate,
+      --  therefore, we have to use ugly "if"s instead of elegant
+      --     "menu/item[@href = $LINK]", etc.
+      -->
+
+    X:if "@href = $LINK" {
+        X:if "$YEAR and @href='/'" {
+            <a href="./"> news </a> <br/>
+        } else {
+            !{ normalize-space(text()) }<br/>
+        }
+
+    } else {
+
+        <!--
+          -- If a menu item has the switchlang attribute, then it will point
+          -- to the same document in the specified language.
+          -->
+        X:if "$TRANS and @switchlang" {
+
+            <!--
+              -- Check if list of available translations ($TRANS) contains
+              -- the language we are going to generate link to.
+              -- If yes - generate link, otherwise just name the language.
+              -->
+            X:if "contains($TRANS, @switchlang)" {
+                <a>
+                X:attribute "href" {
+                    !{ concat($ROOT, '/', @switchlang, '/',
+                        substring-after($LINK, concat('/', $LANG, '/'))) }
+                }
+                !{ normalize-space(text()) }
+                </a>
+
+            } else {
+                <a class="notrans"> !{ normalize-space(text()) } </a>
+            }
+        } else {
+
+            <a>
+            X:attribute "href" {
+
+                X:if "starts-with(@href, $DIRNAME)" {
+                    X:if "substring-after(@href, $DIRNAME) = ''" {
+                        X:text {./}
+                    } else {
+                        !{ substring-after(@href, $DIRNAME) }
+                    }
+
+                } else {
+                    !{ concat($ROOT, @href) }
+                }
+            }
+            !{ normalize-space(text()) }
+            </a>
+
+            X:if "@lang" { X:text { [} !{@lang} X:text {]}}
+        }
+
+        <br/>
+    }
+}
+
+
+X:template = "menu/item[@year]" {
+    X:if "$YEAR or $LINK='/'" {
+        X:if "$YEAR=@year" {
+            !{@year} <br/>
+        } else {
+            X:if "@href" { <a href="{@href}"> !{@year} </a> }
+            <br/>
+        }
+    }
+}
+
+
+X:template = "menu/item[starts-with(@href, 'http://') or starts-with(@href, 'https://')]" {
+    <a href="{@href}"> !{ normalize-space(text()) } </a>
+    X:if "@lang" { X:text { [} !{@lang} X:text {]}}
+    <br/>
+}
+
+
+X:template = "menu/item[not(@href) and not(@year)]" {
+    !{ normalize-space(text()) } <br/>
+}
+
+}

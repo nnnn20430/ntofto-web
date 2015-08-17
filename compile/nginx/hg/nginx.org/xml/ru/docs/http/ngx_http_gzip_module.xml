@@ -1,0 +1,288 @@
+<?xml version="1.0"?>
+
+<!--
+  Copyright (C) Igor Sysoev
+  Copyright (C) Nginx, Inc.
+  -->
+
+<!DOCTYPE module SYSTEM "../../../../dtd/module.dtd">
+
+<module name="Модуль ngx_http_gzip_module"
+        link="/ru/docs/http/ngx_http_gzip_module.html"
+        lang="ru"
+        rev="4">
+
+<section id="summary">
+
+<para>
+Модуль <literal>ngx_http_gzip_module</literal> — это фильтр,
+сжимающий ответ методом gzip,
+что позволяет уменьшить размер передаваемых данных в 2 и более раз.
+</para>
+
+</section>
+
+
+<section id="example" name="Пример конфигурации">
+
+<para>
+<example>
+gzip            on;
+gzip_min_length 1000;
+gzip_proxied    expired no-cache no-store private auth;
+gzip_types      text/plain application/xml;
+</example>
+</para>
+
+<para>
+Для записи в лог достигнутого коэффициента сжатия можно использовать переменную
+<var>$gzip_ratio</var>.
+</para>
+
+</section>
+
+
+<section id="directives" name="Директивы">
+
+<directive name="gzip">
+<syntax><literal>on</literal> | <literal>off</literal></syntax>
+<default>off</default>
+<context>http</context>
+<context>server</context>
+<context>location</context>
+<context>if в location</context>
+
+<para>
+Разрешает или запрещает сжатие ответа методом gzip.
+</para>
+
+</directive>
+
+
+<directive name="gzip_buffers">
+<syntax><value>число</value> <value>размер</value></syntax>
+<default>32 4k|16 8k</default>
+<context>http</context>
+<context>server</context>
+<context>location</context>
+
+<para>
+Задаёт <value>число</value> и <value>размер</value> буферов,
+в которые будет сжиматься ответ.
+По умолчанию размер одного буфера равен размеру страницы.
+В зависимости от платформы это или 4K, или 8K.
+<note>
+До версии 0.7.28 по умолчанию использовалось 4 буфера размером 4K или 8K.
+</note>
+</para>
+
+</directive>
+
+
+<directive name="gzip_comp_level">
+
+<syntax><value>степень</value></syntax>
+<default>1</default>
+<context>http</context>
+<context>server</context>
+<context>location</context>
+
+<para>
+Устанавливает <value>степень</value> сжатия ответа методом gzip.
+Допустимые значения находятся в диапазоне от 1 до 9.
+</para>
+
+</directive>
+
+
+<directive name="gzip_disable">
+<syntax><value>regex</value> ...</syntax>
+<default/>
+<context>http</context>
+<context>server</context>
+<context>location</context>
+<appeared-in>0.6.23</appeared-in>
+
+<para>
+Запрещает сжатие ответа методом gzip для запросов
+с полями заголовка <header>User-Agent</header>,
+совпадающими с заданными регулярными выражениями.
+</para>
+
+<para>
+Специальная маска “<literal>msie6</literal>” (0.7.12) соответствует
+регулярному выражению “<literal>MSIE [4-6]\.</literal>”, но работает быстрее.
+Начиная с версии 0.8.11, из этой маски исключается
+“<literal>MSIE 6.0; ... SV1</literal>”.
+</para>
+
+</directive>
+
+
+<directive name="gzip_min_length">
+<syntax><value>длина</value></syntax>
+<default>20</default>
+<context>http</context>
+<context>server</context>
+<context>location</context>
+
+<para>
+Устанавливает минимальную длину ответа, который будет сжиматься методом gzip.
+Длина определяется только из поля <header>Content-Length</header>
+заголовка ответа.
+</para>
+
+</directive>
+
+
+<directive name="gzip_http_version">
+<syntax><literal>1.0</literal> | <literal>1.1</literal></syntax>
+<default>1.1</default>
+<context>http</context>
+<context>server</context>
+<context>location</context>
+
+<para>
+Устанавливает минимальную HTTP-версию запроса, необходимую для сжатия ответа.
+</para>
+
+</directive>
+
+
+<directive name="gzip_proxied">
+<syntax>
+    <literal>off</literal> |
+    <literal>expired</literal> |
+    <literal>no-cache</literal> |
+    <literal>no-store</literal> |
+    <literal>private</literal> |
+    <literal>no_last_modified</literal> |
+    <literal>no_etag</literal> |
+    <literal>auth</literal> |
+    <literal>any</literal>
+    ...</syntax>
+<default>off</default>
+<context>http</context>
+<context>server</context>
+<context>location</context>
+
+<para>
+Разрешает или запрещает сжатие ответа методом gzip для проксированных
+запросов в зависимости от запроса и ответа.
+То, что запрос проксированный, определяется на основании наличия поля
+<header>Via</header> в заголовке запроса.
+В директиве можно указать одновременно несколько параметров:
+<list type="tag">
+
+<tag-name><literal>off</literal></tag-name>
+<tag-desc>
+запрещает сжатие для всех проксированных запросов,
+игнорируя остальные параметры;
+</tag-desc>
+
+<tag-name><literal>expired</literal></tag-name>
+<tag-desc>
+разрешает сжатие, если в заголовке ответа есть поле
+<header>Expires</header> со значением, запрещающим кэширование;
+</tag-desc>
+
+<tag-name><literal>no-cache</literal></tag-name>
+<tag-desc>
+разрешает сжатие, если в заголовке ответа есть поле
+<header>Cache-Control</header> с параметром “<literal>no-cache</literal>”;
+</tag-desc>
+
+<tag-name><literal>no-store</literal></tag-name>
+<tag-desc>
+разрешает сжатие, если в заголовке ответа есть поле
+<header>Cache-Control</header> с параметром “<literal>no-store</literal>”;
+</tag-desc>
+
+<tag-name><literal>private</literal></tag-name>
+<tag-desc>
+разрешает сжатие, если в заголовке ответа есть поле
+<header>Cache-Control</header> с параметром “<literal>private</literal>”;
+</tag-desc>
+
+<tag-name><literal>no_last_modified</literal></tag-name>
+<tag-desc>
+разрешает сжатие, если в заголовке ответа нет поля
+<header>Last-Modified</header>;
+</tag-desc>
+
+<tag-name><literal>no_etag</literal></tag-name>
+<tag-desc>
+разрешает сжатие, если в заголовке ответа нет поля
+<header>ETag</header>;
+</tag-desc>
+
+<tag-name><literal>auth</literal></tag-name>
+<tag-desc>
+разрешает сжатие, если в заголовке запроса есть поле
+<header>Authorization</header>;
+</tag-desc>
+
+<tag-name><literal>any</literal></tag-name>
+<tag-desc>
+разрешает сжатие для всех проксированных запросов.
+</tag-desc>
+
+</list>
+</para>
+
+</directive>
+
+
+<directive name="gzip_types">
+<syntax><value>mime-тип</value> ...</syntax>
+<default>text/html</default>
+<context>http</context>
+<context>server</context>
+<context>location</context>
+
+<para>
+Разрешает сжатие ответа методом gzip для указанных MIME-типов в дополнение
+к “<literal>text/html</literal>”.
+Специальное значение “<literal>*</literal>” соответствует любому MIME-типу
+(0.8.29).
+Ответы с типом “<literal>text/html</literal>” сжимаются всегда.
+</para>
+
+</directive>
+
+
+<directive name="gzip_vary">
+<syntax><literal>on</literal> | <literal>off</literal></syntax>
+<default>off</default>
+<context>http</context>
+<context>server</context>
+<context>location</context>
+
+<para>
+Разрешает или запрещает выдавать в ответе поле заголовка
+<header>Vary: Accept-Encoding</header>, если активны директивы
+<link id="gzip"/>,
+<link doc="ngx_http_gzip_static_module.xml" id="gzip_static"/> или
+<link doc="ngx_http_gunzip_module.xml" id="gunzip"/>.
+</para>
+
+</directive>
+
+</section>
+
+
+<section id="variables" name="Встроенные переменные">
+
+<para>
+<list type="tag">
+
+<tag-name id="var_gzip_ratio"><var>$gzip_ratio</var></tag-name>
+<tag-desc>достигнутый коэффициент сжатия — отношение размера исходного
+ответа к размеру сжатого.</tag-desc>
+
+</list>
+</para>
+
+</section>
+
+</module>

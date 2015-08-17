@@ -1,0 +1,175 @@
+<?xml version="1.0"?>
+
+<!--
+  Copyright (C) Igor Sysoev
+  Copyright (C) Nginx, Inc.
+  -->
+
+<!DOCTYPE module SYSTEM "../../../../dtd/module.dtd">
+
+<module name="Module ngx_http_referer_module"
+        link="/en/docs/http/ngx_http_referer_module.html"
+        lang="en"
+        rev="2">
+
+<section id="summary">
+
+<para>
+The <literal>ngx_http_referer_module</literal> module is used to block
+access to a site for requests with invalid values in the
+<header>Referer</header> header field.
+It should be kept in mind that fabricating a request with an appropriate
+<header>Referer</header> field value is quite easy, and so the intended
+purpose of this module is not to block such requests thoroughly but to block
+the mass flow of requests sent by regular browsers.
+It should also be taken into consideration that regular browsers may
+not send the <header>Referer</header> field even for valid requests.
+</para>
+
+</section>
+
+
+<section id="example" name="Example Configuration">
+
+<para>
+<example>
+valid_referers none blocked server_names
+               *.example.com example.* www.example.org/galleries/
+               ~\.google\.;
+
+if ($invalid_referer) {
+    return 403;
+}
+</example>
+</para>
+
+</section>
+
+
+<section id="directives" name="Directives">
+
+<directive name="referer_hash_bucket_size">
+<syntax><value>size</value></syntax>
+<default>64</default>
+<context>server</context>
+<context>location</context>
+<appeared-in>1.0.5</appeared-in>
+
+<para>
+Sets the bucket size for the valid referers hash tables.
+The details of setting up hash tables are provided in a separate
+<link doc="../hash.xml">document</link>.
+</para>
+
+</directive>
+
+
+<directive name="referer_hash_max_size">
+<syntax><value>size</value></syntax>
+<default>2048</default>
+<context>server</context>
+<context>location</context>
+<appeared-in>1.0.5</appeared-in>
+
+<para>
+Sets the maximum <value>size</value> of the valid referers hash tables.
+The details of setting up hash tables are provided in a separate
+<link doc="../hash.xml">document</link>.
+</para>
+
+</directive>
+
+
+<directive name="valid_referers">
+<syntax>
+    <literal>none</literal> |
+    <literal>blocked</literal> |
+    <literal>server_names</literal> |
+    <value>string</value>
+    ...</syntax>
+<default/>
+<context>server</context>
+<context>location</context>
+
+<para>
+Specifies the <header>Referer</header> request header field values
+that will cause the embedded <var>$invalid_referer</var> variable to
+be set to an empty string.
+Otherwise, the variable will be set to “<literal>1</literal>”.
+Search for a match is case-insensitive.
+</para>
+
+<para>
+Parameters can be as follows:
+<list type="tag">
+
+<tag-name><literal>none</literal></tag-name>
+<tag-desc>
+the <header>Referer</header> field is missing in the request header;
+</tag-desc>
+
+<tag-name><literal>blocked</literal></tag-name>
+<tag-desc>
+the <header>Referer</header> field is present in the request header,
+but its value has been deleted by a firewall or proxy server;
+such values are strings that do not start with
+“<literal>http://</literal>” or “<literal>https://</literal>”;
+</tag-desc>
+
+<tag-name><literal>server_names</literal></tag-name>
+<tag-desc>
+the <header>Referer</header> request header field contains
+one of the server names;
+</tag-desc>
+
+<tag-name>arbitrary string</tag-name>
+<tag-desc>
+defines a server name and an optional URI prefix.
+A server name can have an “<literal>*</literal>” at the beginning or end.
+During the checking, the server’s port in the <header>Referer</header> field
+is ignored;
+</tag-desc>
+
+<tag-name>regular expression</tag-name>
+<tag-desc>
+the first symbol should be a “<literal>~</literal>”.
+It should be noted that an expression will be matched against
+the text starting after the “<literal>http://</literal>”
+or “<literal>https://</literal>”.
+</tag-desc>
+
+</list>
+</para>
+
+<para>
+Example:
+<example>
+valid_referers none blocked server_names
+               *.example.com example.* www.example.org/galleries/
+               ~\.google\.;
+</example>
+</para>
+
+</directive>
+
+</section>
+
+
+<section id="variables" name="Embedded Variables">
+
+<para>
+<list type="tag">
+
+<tag-name id="var_invalid_referer"><var>$invalid_referer</var></tag-name>
+<tag-desc>
+Empty string, if the <header>Referer</header> request header field
+value is considered
+<link id="valid_referers">valid</link>, otherwise “<literal>1</literal>”.
+</tag-desc>
+
+</list>
+</para>
+
+</section>
+
+</module>

@@ -1,0 +1,167 @@
+<?xml version="1.0"?>
+
+<!--
+  Copyright (C) Igor Sysoev
+  Copyright (C) Nginx, Inc.
+  -->
+
+<!DOCTYPE module SYSTEM "../../../../dtd/module.dtd">
+
+<module name="Модуль ngx_http_browser_module"
+        link="/ru/docs/http/ngx_http_browser_module.html"
+        lang="ru"
+        rev="2">
+
+<section id="summary">
+
+<para>
+Модуль <literal>ngx_http_browser_module</literal> создаёт переменные,
+значения которых зависят от значения поля <header>User-Agent</header>
+в заголовке запроса:
+<list type="tag">
+
+<tag-name id="var_modern_browser"><var>$modern_browser</var></tag-name>
+<tag-desc>
+равна значению, заданному директивой <link id="modern_browser_value"/>,
+если браузер опознан как современный;
+</tag-desc>
+
+<tag-name id="var_ancient_browser"><var>$ancient_browser</var></tag-name>
+<tag-desc>
+равна значению, заданному директивой <link id="ancient_browser_value"/>,
+если браузер опознан как устаревший;
+</tag-desc>
+
+<tag-name id="var_msie"><var>$msie</var></tag-name>
+<tag-desc>
+равна “1”, если браузер опознан как MSIE любой версии.
+</tag-desc>
+
+</list>
+</para>
+
+</section>
+
+
+<section id="example" name="Пример конфигурации">
+
+<para>
+Выбор индексного файла:
+<example>
+modern_browser_value "modern.";
+
+modern_browser msie      5.5;
+modern_browser gecko     1.0.0;
+modern_browser opera     9.0;
+modern_browser safari    413;
+modern_browser konqueror 3.0;
+
+index index.${modern_browser}html index.html;
+</example>
+</para>
+
+<para>
+Перенаправление для старых браузеров:
+<example>
+modern_browser msie      5.0;
+modern_browser gecko     0.9.1;
+modern_browser opera     8.0;
+modern_browser safari    413;
+modern_browser konqueror 3.0;
+
+modern_browser unlisted;
+
+ancient_browser Links Lynx netscape4;
+
+if ($ancient_browser) {
+    rewrite ^ /ancient.html;
+}
+</example>
+</para>
+
+</section>
+
+
+<section id="directives" name="Директивы">
+
+<directive name="ancient_browser">
+<syntax><value>строка</value> ...</syntax>
+<default/>
+<context>http</context>
+<context>server</context>
+<context>location</context>
+
+<para>
+Задаёт подстроки, при нахождении которых в поле <header>User-Agent</header>
+заголовка запроса браузер считается устаревшим.
+Специальная строка “<literal>netscape4</literal>” соответствует
+регулярному выражению “<literal>^Mozilla/[1-4]</literal>”.
+</para>
+
+</directive>
+
+
+<directive name="ancient_browser_value">
+<syntax><value>строка</value></syntax>
+<default>1</default>
+<context>http</context>
+<context>server</context>
+<context>location</context>
+
+<para>
+Задаёт значение для переменных <var>$ancient_browser</var>.
+</para>
+
+</directive>
+
+
+<directive name="modern_browser">
+<syntax><value>браузер</value> <value>версия</value></syntax>
+<syntax><literal>unlisted</literal></syntax>
+<default/>
+<context>http</context>
+<context>server</context>
+<context>location</context>
+
+<para>
+Задаёт версию браузера, начиная с которой он считается современным.
+В качестве браузера можно задать <literal>msie</literal>,
+<literal>gecko</literal> (браузеры, созданные на основе Mozilla),
+<literal>opera</literal>, <literal>safari</literal>
+или <literal>konqueror</literal>.
+</para>
+
+<para>
+Версии можно задать в форматах X, X.X, X.X.X или X.X.X.X.
+Максимальные значения для каждого из форматов соответственно —
+4000, 4000.99, 4000.99.99 и 4000.99.99.99.
+</para>
+
+<para>
+Специальное значение <literal>unlisted</literal> указывает считать
+современным браузер, не описанный директивами <literal>modern_browser</literal>
+и <link id="ancient_browser"/>.
+В противном случае неперечисленный браузер будет считаться устаревшим.
+Если в заголовке запроса нет поля <header>User-Agent</header>, то браузер
+считается неперечисленным.
+</para>
+
+</directive>
+
+
+<directive name="modern_browser_value">
+<syntax><value>строка</value></syntax>
+<default>1</default>
+<context>http</context>
+<context>server</context>
+<context>location</context>
+
+<para>
+Задаёт значение для переменных <var>$modern_browser</var>.
+</para>
+
+</directive>
+
+</section>
+
+</module>

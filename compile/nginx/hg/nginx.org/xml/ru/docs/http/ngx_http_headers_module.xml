@@ -1,0 +1,148 @@
+<?xml version="1.0"?>
+
+<!--
+  Copyright (C) Igor Sysoev
+  Copyright (C) Nginx, Inc.
+  -->
+
+<!DOCTYPE module SYSTEM "../../../../dtd/module.dtd">
+
+<module name="Модуль ngx_http_headers_module"
+        link="/ru/docs/http/ngx_http_headers_module.html"
+        lang="ru"
+        rev="6">
+
+<section id="summary">
+
+<para>
+Модуль <literal>ngx_http_headers_module</literal> позволяет выдавать
+поля заголовка <header>Expires</header> и <header>Cache-Control</header>,
+а также добавлять произвольные поля в заголовок ответа.
+</para>
+
+</section>
+
+
+<section id="example" name="Пример конфигурации">
+
+<para>
+<example>
+expires    24h;
+expires    modified +24h;
+expires    @24h;
+expires    0;
+expires    -1;
+expires    epoch;
+add_header Cache-Control private;
+</example>
+</para>
+
+</section>
+
+
+<section id="directives" name="Директивы">
+
+<directive name="add_header">
+<syntax>
+<value>имя</value> <value>значение</value>
+[<literal>always</literal>]</syntax>
+<default/>
+<context>http</context>
+<context>server</context>
+<context>location</context>
+<context>if в location</context>
+
+<para>
+Добавляет указанное поле в заголовок ответа при условии, что код ответа
+равен 200, 201, 204, 206, 301, 302, 303, 304 или 307.
+В значении можно использовать переменные.
+</para>
+
+<para>
+Директив <literal>add_header</literal> может быть несколько.
+Директивы наследуются с предыдущего уровня при условии, что на данном
+уровне не описаны свои директивы <literal>add_header</literal>.
+</para>
+
+<para>
+Если указан параметр <literal>always</literal> (1.7.5),
+то поле заголовка будет добавлено независимо от кода ответа.
+</para>
+
+</directive>
+
+
+<directive name="expires">
+<syntax>[<literal>modified</literal>] <value>время</value></syntax>
+<syntax>
+    <literal>epoch</literal> |
+    <literal>max</literal> |
+    <literal>off</literal></syntax>
+<default>off</default>
+<context>http</context>
+<context>server</context>
+<context>location</context>
+<context>if в location</context>
+
+<para>
+Разрешает или запрещает добавлять или менять поля <header>Expires</header>
+и <header>Cache-Control</header> в заголовке ответа при условии, что код ответа
+равен 200, 201, 204, 206, 301, 302, 303, 304 или 307.
+В качестве параметра можно задать положительное или отрицательное
+<link doc="../syntax.xml">время</link>.
+</para>
+
+<para>
+Время в поле <header>Expires</header> получается как сумма текущего времени
+и времени, заданного в директиве.
+Если используется параметр <literal>modified</literal> (0.7.0, 0.6.32),
+то время получается как сумма
+времени модификации файла и времени, заданного в директиве.
+</para>
+
+<para>
+Кроме того, с помощью префикса “<literal>@</literal>” можно задать
+время суток (0.7.9, 0.6.34):
+<example>
+expires @15h30m;
+</example>
+</para>
+
+<para>
+Параметр <literal>epoch</literal> соответствует абсолютному времени
+“<literal>Thu, 01 Jan 1970 00:00:01 GMT</literal>”
+(1 января 1970 года 00:00:01 GMT).
+Содержимое поля <header>Cache-Control</header> зависит от знака
+заданного времени:
+<list type="bullet">
+
+<listitem>
+отрицательное время — <header>Cache-Control: no-cache</header>.
+</listitem>
+
+<listitem>
+положительное или равное нулю время —
+<header>Cache-Control: max-age=<value>t</value></header>,
+где <value>t</value> это время в секундах, заданное в директиве.
+</listitem>
+
+</list>
+</para>
+
+<para>
+Параметр <literal>max</literal> задаёт время
+“<literal>Thu, 31 Dec 2037 23:55:55 GMT</literal>”
+(31 декабря 2037 23:55:55 GMT) для поля <header>Expires</header>
+и 10 лет для поля <header>Cache-Control</header>.
+</para>
+
+<para>
+Параметр <literal>off</literal> запрещает добавлять или менять поля
+<header>Expires</header> и <header>Cache-Control</header> в заголовке ответа.
+</para>
+
+</directive>
+
+</section>
+
+</module>

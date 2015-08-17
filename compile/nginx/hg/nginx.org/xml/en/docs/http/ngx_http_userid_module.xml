@@ -1,0 +1,255 @@
+<?xml version="1.0"?>
+
+<!--
+  Copyright (C) Igor Sysoev
+  Copyright (C) Nginx, Inc.
+  -->
+
+<!DOCTYPE module SYSTEM "../../../../dtd/module.dtd">
+
+<module name="Module ngx_http_userid_module"
+        link="/en/docs/http/ngx_http_userid_module.html"
+        lang="en"
+        rev="4">
+
+<section id="summary">
+
+<para>
+The <literal>ngx_http_userid_module</literal> module sets cookies
+suitable for client identification.
+Received and set cookies can be logged using the embedded variables
+<link id="var_uid_got">$uid_got</link> and
+<link id="var_uid_set">$uid_set</link>.
+This module is compatible with the
+<link url="http://www.lexa.ru/programs/mod-uid-eng.html">mod_uid</link>
+module for Apache.
+</para>
+
+</section>
+
+
+<section id="example" name="Example Configuration">
+
+<para>
+<example>
+userid         on;
+userid_name    uid;
+userid_domain  example.com;
+userid_path    /;
+userid_expires 365d;
+userid_p3p     'policyref="/w3c/p3p.xml", CP="CUR ADM OUR NOR STA NID"';
+</example>
+</para>
+
+</section>
+
+
+<section id="directives" name="Directives">
+
+<directive name="userid">
+<syntax>
+    <literal>on</literal> |
+    <literal>v1</literal> |
+    <literal>log</literal> |
+    <literal>off</literal></syntax>
+<default>off</default>
+<context>http</context>
+<context>server</context>
+<context>location</context>
+
+<para>
+Enables or disables setting cookies and logging the received cookies:
+<list type="tag">
+
+<tag-name><literal>on</literal></tag-name>
+<tag-desc>
+enables the setting of version 2 cookies
+and logging of the received cookies;
+</tag-desc>
+
+<tag-name><literal>v1</literal></tag-name>
+<tag-desc>
+enables the setting of version 1 cookies
+and logging of the received cookies;
+</tag-desc>
+
+<tag-name><literal>log</literal></tag-name>
+<tag-desc>
+disables the setting of cookies,
+but enables logging of the received cookies;
+</tag-desc>
+
+<tag-name><literal>off</literal></tag-name>
+<tag-desc>
+disables the setting of cookies and logging of the received cookies.
+</tag-desc>
+
+</list>
+</para>
+
+</directive>
+
+
+<directive name="userid_domain">
+<syntax><value>name</value> | <literal>none</literal></syntax>
+<default>none</default>
+<context>http</context>
+<context>server</context>
+<context>location</context>
+
+<para>
+Defines a domain for which the cookie is set.
+The <literal>none</literal> parameter disables setting of a domain for the
+cookie.
+</para>
+
+</directive>
+
+
+<directive name="userid_expires">
+<syntax><value>time</value> | <literal>max</literal> |
+    <literal>off</literal></syntax>
+<default>off</default>
+<context>http</context>
+<context>server</context>
+<context>location</context>
+
+<para>
+Sets a time during which a browser should keep the cookie.
+The parameter <literal>max</literal> will cause the cookie to expire on
+“<literal>31 Dec 2037 23:55:55 GMT</literal>”.
+The parameter <literal>off</literal> will cause the cookie to expire at
+the end of a browser session.
+</para>
+
+</directive>
+
+
+<directive name="userid_mark">
+<syntax>
+    <value>letter</value> | <value>digit</value> |
+    <literal>=</literal> |
+    <literal>off</literal></syntax>
+<default>off</default>
+<context>http</context>
+<context>server</context>
+<context>location</context>
+
+<para>
+If the parameter is not <literal>off</literal>, enables the cookie marking
+mechanism and sets the character used as a mark.
+This mechanism is used to add or change
+<link id="userid_p3p"/> and/or a cookie expiration time while
+preserving the client identifier.
+A mark can be any letter of the English alphabet (case-sensitive),
+digit, or the “<literal>=</literal>” character.
+</para>
+
+<para>
+If the mark is set, it is compared with the first padding symbol
+in the base64 representation of the client identifier passed in a cookie.
+If they do not match, the cookie is resent with the specified mark,
+expiration time, and <header>P3P</header> header.
+</para>
+
+</directive>
+
+
+<directive name="userid_name">
+<syntax><value>name</value></syntax>
+<default>uid</default>
+<context>http</context>
+<context>server</context>
+<context>location</context>
+
+<para>
+Sets the cookie name.
+</para>
+
+</directive>
+
+
+<directive name="userid_p3p">
+<syntax><value>string</value> | <literal>none</literal></syntax>
+<default>none</default>
+<context>http</context>
+<context>server</context>
+<context>location</context>
+
+<para>
+Sets a value for the <header>P3P</header> header field that will be
+sent along with the cookie.
+If the directive is set to the special value <literal>none</literal>,
+the <header>P3P</header> header will not be sent in a response.
+</para>
+
+</directive>
+
+
+<directive name="userid_path">
+<syntax><value>path</value></syntax>
+<default>/</default>
+<context>http</context>
+<context>server</context>
+<context>location</context>
+
+<para>
+Defines a path for which the cookie is set.
+</para>
+
+</directive>
+
+
+<directive name="userid_service">
+<syntax><value>number</value></syntax>
+<default>IP address of the server</default>
+<context>http</context>
+<context>server</context>
+<context>location</context>
+
+<para>
+If identifiers are issued by multiple servers (services),
+each service should be assigned its own <value>number</value>
+to ensure that client identifiers are unique.
+For version 1 cookies, the default value is zero.
+For version 2 cookies, the default value is the number composed from the last
+four octets of the server’s IP address.
+</para>
+
+</directive>
+
+</section>
+
+
+<section id="variables" name="Embedded Variables">
+
+<para>
+The <literal>ngx_http_userid_module</literal> module
+supports the following embedded variables:
+<list type="tag">
+
+<tag-name id="var_uid_got"><var>$uid_got</var></tag-name>
+<tag-desc>
+The cookie name and received client identifier.
+</tag-desc>
+
+<tag-name id="var_uid_reset"><var>$uid_reset</var></tag-name>
+<tag-desc>
+If the variable is set to a non-empty string that is not “<literal>0</literal>”,
+the client identifiers are reset.
+The special value “<literal>log</literal>” additionally leads to the output of
+messages about the reset identifiers to the
+<link doc="../ngx_core_module.xml" id="error_log"/>.
+</tag-desc>
+
+<tag-name id="var_uid_set"><var>$uid_set</var></tag-name>
+<tag-desc>
+The cookie name and sent client identifier.
+</tag-desc>
+
+</list>
+</para>
+
+</section>
+
+</module>

@@ -1,0 +1,354 @@
+<!DOCTYPE article SYSTEM "../../../../dtd/article.dtd">
+
+<article name="Sunucu adları"
+         link="/tr/docs/http/server_names.html"
+         lang="tr"
+         author="Igor Sysoev"
+         translator="Altan Tanrıverdi">
+
+<section>
+
+<para>
+Sunucu adları <literal>server_name</literal> yönergesi kullanılarak tanımlanırlar ve gelen bir talep için hangi server bloğunun kullanılacağını belirlerler. Ayrıca bakınız &ldquo;<link doc="request_processing.xml" />&rdquo;. Gerçek, wildcard veya düzenli ifadeler şeklinde tanımlanabilirler.
+
+<programlisting>
+server {
+    listen       80;
+    server_name  example.org  www.example.org;
+    ...
+}
+
+server {
+    listen       80;
+    server_name  *.example.org;
+    ...
+}
+
+server {
+    listen       80;
+    server_name  mail.*;
+    ...
+}
+
+server {
+    listen       80;
+    server_name  ~^(?&lt;user&gt;.+)\.example\.net$;
+    ...
+}
+</programlisting>
+
+Bu adlar şu sıra ile test edilirler:
+
+<list type="enum">
+
+<listitem>
+gerçek adlar;
+</listitem>
+
+<listitem>
+* ile başlayan wildcard adlar: <literal>*.example.org</literal>;
+</listitem>
+
+<listitem>
+* ile biten wildcard adlar: <literal>mail.*</literal>;
+</listitem>
+
+<listitem>
+ve düzenli ifadeler (regular expressions).
+</listitem>
+
+</list>
+İlk eşleşme arama işlemini bitirir.
+</para>
+
+</section>
+
+
+<section id="wildcard_names"
+        name="Wildcard adlar">
+
+<para>
+Bir wildcard ad ancak başlangıçta veya bitişte * ifadesini içerir ve nokta ile sınırlandırılır. <literal>www.*.example.org</literal> ve <literal>w*.example.org</literal> adları geçersizdir. Ancak bu adlar düzenli ifadeler ile geçerli hale getirilebilir, örneğin, <literal>~^www\..+\.example\.org$</literal> ve <literal>~^w.*\.example\.org$</literal>. Buradaki * bir çok eşleşmeyi tanımlayabilir. <literal>*.example.org</literal> ifadesi <literal>www.example.org</literal> ve <literal>www.sub.example.org</literal> adlarına karşılık gelebilir.
+</para>
+
+<para>
+<literal>.example.org</literal> şeklindeki bir wildcard <literal>example.org</literal> gerçek adı ile <literal>*.example.org</literal> wildcard adına karşılık gelir.
+</para>
+
+</section>
+
+
+<section id="regex_names"
+        name="Düzenli ifade adları">
+
+<para>
+nginx tarafından kullanılan düzenli ifadeler, Perl programlama dili (PCRE) tarafından kullanılanlar ile tam uyumludur.
+Bir düzenli ifade kullanmak için sunucu adı tilda (~) ile başlamalıdır:
+
+<programlisting>
+server_name  ~^www\d+\.example\.net$;
+</programlisting>
+
+diğer türlü ifade gerçek ad veya düzenli ifade * içeriyorsa wildcard ad gibi algılanacaktır (ve yüksek ihtimal geçersiz bir ad olarak).
+&ldquo;^&rdquo; ve &ldquo;$&rdquo; çapalarını kullanmayı unutmayın.
+Sentaks açısından gerekli olmasalar da mantık açısından gereklidir.
+Ayrıca alan adında bulunan noktalarda da \ önceli ile kullanılmalıdır.
+&ldquo;{&rdquo; ve &ldquo;}&rdquo; kullanan bir düzenli ifade tırnak arasına alınmalıdır:
+
+<programlisting>
+server_name  "~^(?&lt;name&gt;\w\d<b>{</b>1,3<b>}</b>+)\.example\.net$";
+</programlisting>
+
+diğer türlü, nginx şu şekilde bir hata verecektir:
+
+<programlisting>
+directive "server_name" is not terminated by ";" in ...
+</programlisting>
+
+Bir düzenli ifade adı değişken olarak sonraki aşamalarda kullanılabilir:
+
+<programlisting>
+server {
+    server_name   ~^(www\.)?(<b>?&lt;domain&gt;</b>.+)$;
+
+    location / {
+        root   /sites/<b>$domain</b>;
+    }
+}
+</programlisting>
+
+PCRE kütüphanesi ile ad yakalama işlemi de şu şekildedir:
+
+<table note="yes">
+
+<tr>
+<td><literal>?&lt;<value>name</value>&gt;</literal></td>
+<td>Perl 5.10 uyumlu sentaks, PCRE-7.0 ile gelmiştir.</td>
+</tr>
+
+<tr>
+<td><literal>?'<value>name</value>'</literal></td>
+<td>Perl 5.10 uyumlu sentaks, PCRE-7.0 ile gelmiştir.</td>
+</tr>
+
+<tr>
+<td><literal>?P&lt;<value>name</value>&gt;</literal></td>
+<td>Python uyumlu sentaks, PCRE-4.0 ile gelmiştir.</td>
+</tr>
+
+</table>
+
+Eğer nginx aşağıdaki hatayı verirse:
+
+<programlisting>
+pcre_compile() failed: unrecognized character after (?&lt; in ...
+</programlisting>
+
+bu PCRE kütüphanesini eski olduğu ve <literal>?P&lt;<value>name</value>&gt;</literal> şeklinde kullanmanız gerektiği anlamına gelir.
+Yakalama ayrıca dijital formda da olabilir:
+
+<programlisting>
+server {
+    server_name   ~^(www\.)?(.+)$;
+
+    location / {
+        root   /sites/<b>$2</b>;
+    }
+}
+</programlisting>
+
+Ancak, dijital referanslar kolaylıkla üstüne yazılabilir olduğundan, bu şekilde kullanım basit durumlar için sınırlandırılmalıdır (yukarıdaki gibi).
+</para>
+
+
+</section>
+
+
+<section id="miscellaneous_names"
+        name="Diğer muhtelif adlar">
+
+<para>
+Eğer server bloğu içerisinde bir <literal>server_name</literal> tanımlanmamışsa nginx, sunucu adı olarak <i>hostname</i> ifadesini kullanır.
+</para>
+
+<para>
+Eğer varsayılan dışındaki bir server bloğuna gelen ve header bilgisinde &ldquo;Host&rdquo; datası yer almayan bir talebi işlemek isterseniz boş bir ad kullanmak zorundasınız:
+
+<programlisting>
+server {
+    listen       80;
+    server_name  example.org  www.example.org  "";
+    ...
+}
+</programlisting>
+</para>
+
+<para>
+Eğer bir istemci ad yerine IP adresini kullanarak bir talepte bulunursa, header içerisinde bulunan &ldquo;Host&rdquo; datası IP bilgisini içerecektir ve bu IP adresini, sunucu adı olarak kullanarak talebi işleyebilirsiniz:
+
+<programlisting>
+server {
+    listen       80;
+    server_name  example.org
+                 www.example.org
+                 ""
+                 <b>192.168.1.1</b>
+                 ;
+    ...
+}
+</programlisting>
+</para>
+
+<para>
+Bir catch-all (tümünü-yakala) sunucuda &ldquo;_&rdquo; şeklinde garip bir ifade ile karşılaşabilirsiniz:
+
+<programlisting>
+server {
+    listen       80  default_server;
+    server_name  _;
+    return       444;
+}
+</programlisting>
+
+Bu ad ile ilgili özel bir durum söz konusu değil, sadece gerçek bir ad ile kesişmeyen sayısız geçersiz alan adlarından biridir.
+Ayrıca &ldquo;--&rdquo;, &ldquo;!@#&rdquo; ve benzeri ifadeler de kullanabilirsiniz.
+</para>
+
+<para>
+nginx, 0.6.25 versiyonuna kadar, bir catch-all adı olmak için hatalı bir şekilde yorumlanan &ldquo;*&rdquo; özel adını destekliyordu.
+Fakat bu bir catch-all veya wildcard sunucu adı olarak fonksiyonel değil. Bunun yerine, <literal>server_name_in_redirect</literal> yönergesini kullanarak fonksiyonelliği sağlamaya başladık.
+&ldquo;*&rdquo; özel karakteri artık desteklenmiyor, bu yüzden <literal>server_name_in_redirect</literal> yönergesi kullanılmalıdır.
+Not: <literal>server_name</literal> yönergesini kullanan varsayılan sunucuyu veya catch-all adını belirtmenin bir yolu bulunmuyor.
+Bu, <literal>server_name</literal> yönergesinin değil, <literal>listen</literal> yönergesinin bir özelliğidir.
+Ayrıca bakınız &ldquo;<link doc="request_processing.xml" />&rdquo;.
+*:80 ve *:8080 portlarını dinleyen sunucular tanımlayabilir ve birini *:8080 portu için varsayılan olarak belirlerken, diğerini de *:80 için varsayılan olarak belirleyebilirsiniz:
+
+<programlisting>
+server {
+    listen       80;
+    listen       8080  default_server;
+    server_name  example.net;
+    ...
+}
+
+server {
+    listen       80  default_server;
+    listen       8080;
+    server_name  example.org;
+    ...
+}
+</programlisting>
+</para>
+
+
+</section>
+
+
+<section id="optimization"
+        name="Optimizasyon">
+
+<para>
+Gerçek ve wildcard adlar çırpılarda (hash) depolanır. Çırpılar listen portlarına bağlıdırlar ve her bir listen port 3 farklı çırpıya sahip olabilir: gerçek ad çırpısı, * ile başlayan bir wildcard adı çırpısı ve * ile biten bir wildcard adı çırpısı. Çırpıların boyutu yapılandırma aşamasında optimize edilir ve böylece bir ad en az önbellek kayıpları ile bulundurulur. İlk olarak gerçek ad çırpısı aranır. Gerçek ad çırpısı kullanan bir ad bulunmaz ise, * ile başlayan wildcard ad çırpısı aranır. Bu da bulunmaz ise, * ile biten wildcard ad çırpısı aranır. Adların alanadı parçaları ile aranması nedeniyle wildcard ad çırpıları araması, gerçek ad çırpı aramasına oranla daha yavaştır. Not: Özel <literal>.example.org</literal> wildcard formu, gerçek ad çırpısında değil, wildcard ad çırpısında saklanır. Düzenli İfadeler sırayla test edildiğinden bu en yavaş ve ölçeklenebilir olmayan yöntemdir.
+</para>
+
+<para>
+Bu nedenlerden dolayı, imkanlar el veriyorsa gerçek adları kullanmak en iyisidir. Örneğin, bir sunucunun en sık talep edilen adları <literal>example.org</literal> ve <literal>www.example.org</literal> ise bunları açıkca belirtmek daha etkili olacaktır:
+
+<programlisting>
+server {
+    listen       80;
+    server_name  example.org  www.example.org  *.example.org;
+    ...
+}
+</programlisting>
+
+bu kullanım aşağıdaki basit kullanımdan daha etkili olacaktır:
+
+<programlisting>
+server {
+    listen       80;
+    server_name  .example.org;
+    ...
+}
+</programlisting>
+</para>
+
+<para>
+Eğer çok miktarda veya olağandışı şekilde uzun sunucu adları tanımladıysanız, <i>http</i> düzeyinde <literal>server_names_hash_max_size</literal>
+ve <literal>server_names_hash_bucket_size</literal> yönergelerini tekrar ayarlamalısınız. <literal>server_names_hash_bucket_size</literal> yönergesinin varsayılan değeri CPU önbellek satır boyutuna göre 32, 64 veya başka bir rakam olabilir. Eğer bu değer 32 ise ve &ldquo;cok.uzun.sunucu.adi.example.org&rdquo; ifadesini sunucu adı olarak belirlerseniz nginx, başlamayacak ve aşağıdaki hatayı verecektir:
+
+<programlisting>
+could not build the server_names_hash,
+you should increase server_names_hash_bucket_size: 32
+</programlisting>
+
+Bu durumda yönerge değerini aşağıdaki gibi belirlemelisiniz:
+
+<programlisting>
+http {
+    server_names_hash_bucket_size  64;
+    ...
+</programlisting>
+
+Eğer çok fazla sunu adı belirlemiş iseniz şu şekilde bir hata alacaksınız:
+
+<programlisting>
+could not build the server_names_hash,
+you should increase either server_names_hash_max_size: 512
+or server_names_hash_bucket_size: 32
+</programlisting>
+
+Bu durumda ilk olarak <literal>server_names_hash_max_size</literal> değerini sunucu ad sayısına yakın bir değeri yükseltin. Eğer bu da yardımcı sorunu çözmez ise veya nginx başlama süresi çok uzar ise <literal>server_names_hash_bucket_size</literal> değerini arttırın.
+</para>
+
+<para>
+Eğer bir sunucu sadece bir listen port için ise, nginx sunucu adlarını test etmeyecek ve listen port için çırpılar yaratmayacaktır. Fakat bu durumun bir istisnası var; eğer <literal>server_name</literal> tutuklar (capture) içeren bir düzenli ifade ise nginx, bu tutukları almak için ifadeyi yürütmek zorundadır.
+</para>
+
+</section>
+
+
+<section id="compatibility"
+        name="Uygunluk">
+
+<para>
+<list type="bullet">
+
+<listitem>
+Named düzenli ifade sunucu adı tutukları, 0.8.25 versiyonundan beri destekleniyor.
+</listitem>
+
+<listitem>
+Düzenli ifade sunucu adı tutukları, 0.7.40 versiyonundan beri destekleniyor.
+</listitem>
+
+<listitem>
+&ldquo;&rdquo; boş sunucu adı 0.7.12 versiyonundan beri destekleniyor.
+</listitem>
+
+<listitem>
+Bir wildcard sunucu adının veya düzenli ifadenin ilk sunucu adı olarak kullanılması 0.6.25 versiyonundan beri destekleniyor.
+</listitem>
+
+<listitem>
+Düzenli ifade sunucu adları 0.6.7 versiyonundan beri destekleniyor.
+</listitem>
+
+<listitem>
+<literal>example.*</literal> wildcard formu 0.6.0 versiyonundan beri destekleniyor.
+</listitem>
+
+<listitem>
+<literal>.example.org</literal> özel formu 0.3.18 versiyonundan beri destekleniyor.
+</listitem>
+
+<listitem>
+<literal>*.example.org</literal> wildcard formu 0.1.13 versiyonundan beri destekleniyor.
+</listitem>
+
+</list>
+</para>
+
+</section>
+
+</article>

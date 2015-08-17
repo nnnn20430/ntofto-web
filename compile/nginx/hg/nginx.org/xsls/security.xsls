@@ -1,0 +1,93 @@
+<!--
+  Copyright (C) Igor Sysoev
+  Copyright (C) Nginx, Inc.
+  -->
+
+X:stylesheet {
+
+X:template = "security" { <ul> !!; </ul> }
+
+
+X:template = "security/item" {
+
+    <li>
+    <p>
+
+    !{@name}<br/>
+
+    X:if "@severity = 'major'" {
+        X:text{Severity: } <b>!{@severity}</b><br/>
+    } else {
+        X:text{Severity: } !{@severity}<br/>
+    }
+
+    X:if "@advisory" {
+        <a href="{@advisory}"> X:text {Advisory} </a>
+        <br/>
+    }
+
+    X:if "@cert" {
+        <a>
+        X:attribute "href" {
+            X:text {http://www.kb.cert.org/vuls/id/} !{@cert}
+        }
+        X:text {VU#} !{@cert}
+        </a>
+    }
+
+    X:if "@cve" {
+        X:if "@cert" {
+            X:text {&#xA0;&#xA0;}
+        }
+        <a>
+        X:attribute "href" {
+            X:text {http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-} !{@cve}
+        }
+        X:text {CVE-} !{@cve}
+        </a>
+    }
+
+    X:if "@core" {
+        X:if "@cert or @cve" {
+            X:text {&#xA0;&#xA0;}
+        }
+        <a href="{@href}"> !{@core} </a>
+    }
+
+    X:if "@cert or @cve or @core" {
+        <br/>
+    }
+
+    X:text {Not vulnerable: } !{@good} <br/>
+    X:text {Vulnerable: } !{@vulnerable}
+
+    X:for-each "patch" {
+        <br/>
+
+        <a>
+        X:attribute "href" {
+            X:text {/download/} !{@name}
+        }
+        X:text {The patch}
+        </a>
+
+        X:text {&#xA0;&#xA0;}
+
+        <a>
+        X:attribute "href" {
+            X:text {/download/} !{@name} X:text {.asc}
+        }
+        X:text {pgp}
+        </a>
+
+        X:if "@versions" {
+            X:text {&#xA0;&#xA0;(for } !{@versions} X:text {)}
+        }
+    }
+
+    </p>
+    </li>
+}
+
+
+}

@@ -1,0 +1,1 @@
+./configure --enable-zip --enable-sockets --enable-bcmath --enable-mbstring --with-openssl --with-gd --with-curl --with-zlib --with-mysql --with-pdo-mysql

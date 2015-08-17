@@ -1,0 +1,150 @@
+<!--
+  Copyright (C) Igor Sysoev
+  Copyright (C) Nginx, Inc.
+  -->
+
+<!ELEMENT  section      (para | list | book | download | security | note |
+                         programlisting | table | section)* >
+<!ATTLIST  section
+           id           ID #IMPLIED
+           name         CDATA #IMPLIED
+>
+
+<!ELEMENT  para         (#PCDATA | link | links | varlinks | br | list | note |
+                         i | b | nobr | table | literal | command |
+                         path | example | header | value | programlisting |
+                         initial |
+                         mainline_version | stable_version | commercial_version |
+                         registered | c-func | http-status)* >
+
+<!ELEMENT  links        (link)+ >
+<!ELEMENT  varlinks     (link)+ >
+
+<!ELEMENT  link         (#PCDATA) >
+<!ATTLIST  link
+           doc          CDATA #IMPLIED
+           id           CDATA #IMPLIED
+           url          CDATA #IMPLIED
+>
+
+<!ELEMENT  br           EMPTY >
+
+<!ELEMENT  i            (#PCDATA) >
+<!ELEMENT  b            (#PCDATA) >
+<!ELEMENT  command      (#PCDATA | value)* >
+<!ELEMENT  path         (#PCDATA | value |
+                         mainline_version | stable_version | commercial_version)* >
+<!ELEMENT  literal      (#PCDATA | value)* >
+<!ELEMENT  example      (#PCDATA | value)* >
+<!ELEMENT  header       (#PCDATA) >
+<!ELEMENT  initial      (#PCDATA) >
+<!ELEMENT  value        (#PCDATA) >
+<!ELEMENT  var          (#PCDATA) >
+
+<!ELEMENT  registered   (#PCDATA) >
+<!ELEMENT  c-func       (#PCDATA)* >
+
+<!ELEMENT  http-status  EMPTY >
+<!ATTLIST  http-status
+           code         CDATA #REQUIRED
+           text         CDATA #IMPLIED
+>
+
+<!ELEMENT  programlisting  (#PCDATA | i | b | path |
+                            mainline_version | stable_version | commercial_version)* >
+
+<!ELEMENT  nobr         (#PCDATA | b | command | i | literal | path)* >
+
+<!ELEMENT  list         (listitem+ | (tag-name | tag-desc)+) >
+<!ATTLIST  list
+           type         (bullet | enum | tag) #REQUIRED
+           compact      (yes | no) "yes"
+>
+
+<!ELEMENT  listitem     (#PCDATA | para | br | nobr | list | i | b |
+                         path | literal | value | var | programlisting |
+                         link | registered |
+                         mainline_version | stable_version | commercial_version)* >
+<!ATTLIST  listitem
+           id           ID #IMPLIED
+>
+
+<!ELEMENT  tag-name     ANY >
+<!ATTLIST  tag-name
+           id           ID #IMPLIED
+>
+
+<!ELEMENT  tag-desc     ANY >
+
+<!ELEMENT  note         (#PCDATA | para | br | list | i | b | link |
+                         nobr | table | literal | command | path |
+                         header | programlisting | initial | paypal |
+                         mainline_version | stable_version | commercial_version)* >
+
+<!ELEMENT  table        (tr+) >
+<!ATTLIST  table
+           note         CDATA #IMPLIED
+           width        CDATA #IMPLIED
+           class        CDATA #IMPLIED
+>
+<!ELEMENT  tr           (td+) >
+<!ELEMENT  td           (#PCDATA | br | literal | b | i | link | list)* >
+<!ATTLIST  td
+           width        CDATA #IMPLIED
+>
+
+<!ELEMENT  paypal       EMPTY >
+
+<!ELEMENT  mainline_version    EMPTY >
+<!ELEMENT  stable_version      EMPTY >
+<!ELEMENT  commercial_version  (#PCDATA) >
+
+<!ELEMENT  book         EMPTY >
+<!ATTLIST  book
+           title        CDATA #REQUIRED
+           link         CDATA #REQUIRED
+           author       CDATA #REQUIRED
+           site         CDATA #REQUIRED
+           publisher    CDATA #REQUIRED
+           lang         CDATA #REQUIRED
+           cover        CDATA #REQUIRED
+           translator   CDATA #IMPLIED
+>
+
+<!ELEMENT  download     EMPTY >
+<!ATTLIST  download
+           last         CDATA #REQUIRED
+           tag          (mainline | stable | legacy) #REQUIRED
+>
+
+<!ELEMENT  security     (item+) >
+
+<!ELEMENT  item         (patch)* >
+<!ATTLIST  item
+           name         CDATA #IMPLIED
+           severity     CDATA #IMPLIED
+           cve          CDATA #IMPLIED
+           good         CDATA #IMPLIED
+           vulnerable   CDATA #IMPLIED
+           patch        CDATA #IMPLIED
+           core         CDATA #IMPLIED
+           href         CDATA #IMPLIED
+           cert         CDATA #IMPLIED
+           advisory     CDATA #IMPLIED
+>
+
+<!ELEMENT  patch        EMPTY >
+<!ATTLIST  patch
+           name         CDATA #REQUIRED
+           versions     CDATA #IMPLIED
+>
+
+<!ENTITY   nbsp         "&#160;">
+<!ENTITY   times        "&#215;">
+<!ENTITY   lsquo        "&#8216;">
+<!ENTITY   rsquo        "&#8217;">
+<!ENTITY   ldquo        "&#8220;">
+<!ENTITY   rdquo        "&#8221;">
+
+<!ENTITY   mdash        "&#xA0;&#8212; " >
+<!ENTITY   reg          "&#174;">

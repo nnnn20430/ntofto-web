@@ -1,0 +1,62 @@
+<?xml version="1.0"?>
+
+<!--
+  Copyright (C) Igor Sysoev
+  Copyright (C) Nginx, Inc.
+  -->
+
+<!DOCTYPE module SYSTEM "../../../../dtd/module.dtd">
+
+<module name="Модуль ngx_http_random_index_module"
+        link="/ru/docs/http/ngx_http_random_index_module.html"
+        lang="ru"
+        rev="2">
+
+<section id="summary">
+
+<para>
+Модуль <literal>ngx_http_random_index_module</literal> обслуживает запросы,
+оканчивающиеся слэшом (‘<literal>/</literal>’), и выдаёт случайный
+файл в качестве индексного файла каталога.
+Модуль выполняется до модуля
+<link doc="ngx_http_index_module.xml">ngx_http_index_module</link>.
+</para>
+
+<para>
+По умолчанию этот модуль не собирается, его сборку необходимо
+разрешить с помощью конфигурационного параметра
+<literal>--with-http_random_index_module</literal>.
+</para>
+
+</section>
+
+
+<section id="example" name="Пример конфигурации">
+
+<para>
+<example>
+location / {
+    random_index on;
+}
+</example>
+</para>
+
+</section>
+
+
+<section id="directives" name="Директивы">
+
+<directive name="random_index">
+<syntax><literal>on</literal> | <literal>off</literal></syntax>
+<default>off</default>
+<context>location</context>
+
+<para>
+Разрешает или запрещает в содержащем location обработку этим модулем.
+</para>
+
+</directive>
+
+</section>
+
+</module>

@@ -1,0 +1,78 @@
+<!--
+  Copyright (C) Igor Sysoev
+  Copyright (C) Nginx, Inc.
+  -->
+
+<!DOCTYPE article SYSTEM "../../dtd/article.dtd">
+
+<article name="nginx: скачать"
+         link="/ru/download.html"
+         lang="ru"
+         rev="1">
+
+
+<section name="Основная версия">
+
+<download last="1" tag="mainline" />
+
+</section>
+
+
+<section name="Стабильная версия">
+
+<download last="1" tag="stable" />
+
+</section>
+
+
+<section name="Устаревшие версии">
+
+<download last="1" tag="legacy" />
+
+</section>
+
+
+<section name="Исходный код">
+
+<para>
+Репозитории Mercurial, доступные только для чтения:
+<list type="bullet">
+
+<listitem>
+код: <literal>http://hg.nginx.org/nginx</literal>
+</listitem>
+<listitem>
+сайт: <literal>http://hg.nginx.org/nginx.org</literal>
+</listitem>
+
+</list>
+</para>
+
+<para>
+<link url="http://trac.nginx.org/nginx/browser">Исходный код в Trac</link>
+</para>
+
+</section>
+
+
+<section name="Готовые пакеты">
+
+<para>
+<list type="bullet">
+
+<listitem>
+Пакеты <link doc="linux_packages.xml" id="stable">стабильной версии</link>
+для Linux
+</listitem>
+
+<listitem>
+Пакеты <link doc="linux_packages.xml" id="mainline">mainline-версии</link>
+для Linux
+</listitem>
+
+</list>
+</para>
+
+</section>
+
+</article>

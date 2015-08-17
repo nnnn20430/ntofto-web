@@ -1,0 +1,39 @@
+/*
+ '.' preffix selects class (<div class="test">) would be .test
+ '#' preffix selects id (<div id="test">) would be #test
+ i really suck at css and design in general.
+*/
+
+#main {
+	position: absolute;
+	white-space:nowrap;
+}
+
+#center {
+	padding: 1px;
+	position: fixed;
+	top: 50%;
+	left: 50%;
+}
+
+body {
+	background-color: #eee;
+}
+
+div.center {
+  margin-left: auto;
+  margin-right: auto;
+  width: 8em;
+} 
+
+img.center {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+} 
+
+.vcenter {
+  min-height: 12em;
+  display: table-cell;
+  vertical-align: middle;
+} 

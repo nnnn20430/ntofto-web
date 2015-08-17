@@ -1,0 +1,52 @@
+<!--
+  Copyright (C) Igor Sysoev
+  Copyright (C) Nginx, Inc.
+  -->
+
+<!DOCTYPE article SYSTEM "../../../dtd/article.dtd">
+
+<article name="FAQ"
+         link="/en/docs/faq.html"
+         lang="en"
+         rev="2">
+
+
+<section>
+
+<para>
+<list type="bullet">
+
+<listitem>
+<link doc="welcome_nginx_facebook.xml"/>
+</listitem>
+
+<listitem>
+<link doc="faq/license_copyright.xml"/>
+</listitem>
+
+<listitem>
+<link doc="faq/accept_failed.xml"/>
+</listitem>
+
+<listitem>
+<link doc="faq/variables_in_config.xml"/>
+</listitem>
+
+<listitem>
+<link doc="faq/daemon_master_process_off.xml"/>
+</listitem>
+
+<listitem>
+<link doc="faq/chunked_encoding_from_backend.xml"/>
+</listitem>
+
+<listitem>
+<link doc="sys_errlist.xml"/>
+</listitem>
+
+</list>
+</para>
+
+</section>
+
+</article>

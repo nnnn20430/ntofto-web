@@ -1,0 +1,10 @@
+<!--
+  Copyright (C) Nginx, Inc.
+  -->
+
+<!ELEMENT  error        EMPTY >
+<!ATTLIST  error
+           name         CDATA #REQUIRED
+           link         CDATA #REQUIRED
+           lang         CDATA #REQUIRED
+>

@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+
+<!--
+  Copyright (C) Igor Sysoev
+  Copyright (C) Nginx, Inc.
+  -->
+
+<!DOCTYPE module SYSTEM "../../../../dtd/module.dtd">
+
+<module name="Модуль ngx_http_limit_zone_module"
+        link="/ru/docs/http/ngx_http_limit_zone_module.html"
+        lang="ru">
+
+<section id="summary">
+
+<para>
+В версии 1.1.8 модуль <literal>ngx_http_limit_zone_module</literal>
+был переименован в модуль
+<link doc="ngx_http_limit_conn_module.xml">ngx_http_limit_conn_module</link>.
+</para>
+
+</section>
+
+</module>

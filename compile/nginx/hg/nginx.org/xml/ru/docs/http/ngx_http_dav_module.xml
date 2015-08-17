@@ -1,0 +1,179 @@
+<?xml version="1.0"?>
+
+<!--
+  Copyright (C) Igor Sysoev
+  Copyright (C) Nginx, Inc.
+  -->
+
+<!DOCTYPE module SYSTEM "../../../../dtd/module.dtd">
+
+<module name="Модуль ngx_http_dav_module"
+        link="/ru/docs/http/ngx_http_dav_module.html"
+        lang="ru"
+        rev="2">
+
+<section id="summary">
+
+<para>
+Модуль <literal>ngx_http_dav_module</literal> предназначен для автоматизации
+задач управления файлами на сервере по протоколу WebDAV.
+Модуль обрабатывает HTTP- и WebDAV-методы
+PUT, DELETE, MKCOL, COPY и MOVE.
+</para>
+
+<para>
+По умолчанию этот модуль не собирается, его сборку необходимо
+разрешить с помощью конфигурационного параметра
+<literal>--with-http_dav_module</literal>.
+</para>
+
+<para>
+<note>
+WebDAV-клиенты, которые требуют для работы дополнительных WebDAV-методов,
+не будут работать с этим модулем.
+</note>
+</para>
+
+</section>
+
+
+<section id="example" name="Пример конфигурации">
+
+<para>
+<example>
+location / {
+    root                  /data/www;
+
+    client_body_temp_path /data/client_temp;
+
+    dav_methods PUT DELETE MKCOL COPY MOVE;
+
+    create_full_put_path  on;
+    dav_access            group:rw  all:r;
+
+    limit_except GET {
+        allow 192.168.1.0/32;
+        deny  all;
+    }
+}
+</example>
+</para>
+
+</section>
+
+
+<section id="directives" name="Директивы">
+
+<directive name="dav_access">
+<syntax><value>пользователи</value>:<value>права</value> ...</syntax>
+<default>user:rw</default>
+<context>http</context>
+<context>server</context>
+<context>location</context>
+
+<para>
+Задаёт права доступа для создаваемых файлов и каталогов,
+например,
+<example>
+dav_access user:rw group:rw all:r;
+</example>
+</para>
+
+<para>
+Если заданы какие-либо права для <literal>group</literal> или
+<literal>all</literal>, то права для <literal>user</literal>
+указывать необязательно:
+<example>
+dav_access group:rw all:r;
+</example>
+</para>
+
+</directive>
+
+
+<directive name="dav_methods">
+<syntax>
+    <literal>off</literal> | <value>метод</value> ...</syntax>
+<default>off</default>
+<context>http</context>
+<context>server</context>
+<context>location</context>
+
+<para>
+Разрешает указанные HTTP- и WebDAV-методы.
+Параметр <literal>off</literal> запрещает все методы, обрабатываемые
+данным модулем.
+Поддерживаются следующие методы:
+<literal>PUT</literal>, <literal>DELETE</literal>, <literal>MKCOL</literal>,
+<literal>COPY</literal> и <literal>MOVE</literal>.
+</para>
+
+<para>
+Файл, загружаемый методом PUT, записывается во временный файл,
+а потом этот файл переименовывается.
+Начиная с версии 0.8.9, временный файл и его постоянное место хранения
+могут располагаться на разных файловых системах.
+Однако нужно учитывать,
+что в этом случае вместо дешёвой операции переименовывания в пределах
+одной файловой системы файл копируется с одной файловой системы на другую.
+Поэтому лучше, если сохраняемые файлы будут находиться на той же файловой
+системе, что и каталог с временными файлами, задаваемый директивой
+<link doc="ngx_http_core_module.xml" id="client_body_temp_path"/>
+для данного location.
+</para>
+
+<para>
+При создании файла с помощью метода PUT можно задать дату модификации,
+передав её в поле заголовка <header>Date</header>.
+</para>
+
+</directive>
+
+
+<directive name="create_full_put_path">
+<syntax><literal>on</literal> | <literal>off</literal></syntax>
+<default>off</default>
+<context>http</context>
+<context>server</context>
+<context>location</context>
+
+<para>
+По спецификации WebDAV-метод PUT может создавать файл только в
+уже существующем каталоге.
+Данная директива разрешает создавать все необходимые промежуточные каталоги.
+</para>
+
+</directive>
+
+
+<directive name="min_delete_depth">
+<syntax><value>число</value></syntax>
+<default>0</default>
+<context>http</context>
+<context>server</context>
+<context>location</context>
+
+<para>
+Разрешает методу DELETE удалять файлы
+при условии, что число элементов в пути запроса не меньше заданного.
+Например, директива
+<example>
+min_delete_depth 4;
+</example>
+разрешает удалять файлы по запросам
+<example>
+/users/00/00/name
+/users/00/00/name/pic.jpg
+/users/00/00/page.html
+</example>
+и запрещает удаление
+<example>
+/users/00/00
+</example>
+</para>
+
+</directive>
+
+</section>
+
+</module>

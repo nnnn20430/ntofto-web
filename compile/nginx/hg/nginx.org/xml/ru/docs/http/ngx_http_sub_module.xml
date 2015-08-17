@@ -1,0 +1,119 @@
+<?xml version="1.0"?>
+
+<!--
+  Copyright (C) Igor Sysoev
+  Copyright (C) Nginx, Inc.
+  -->
+
+<!DOCTYPE module SYSTEM "../../../../dtd/module.dtd">
+
+<module name="Модуль ngx_http_sub_module"
+        link="/ru/docs/http/ngx_http_sub_module.html"
+        lang="ru"
+        rev="2">
+
+<section id="summary">
+
+<para>
+Модуль <literal>ngx_http_sub_module</literal> — это фильтр,
+изменяющий в ответе одну заданную строку на другую.
+</para>
+
+<para>
+По умолчанию этот модуль не собирается, его сборку необходимо
+разрешить с помощью конфигурационного параметра
+<literal>--with-http_sub_module</literal>.
+</para>
+
+</section>
+
+
+<section id="example" name="Пример конфигурации">
+
+<para>
+<example>
+location / {
+    sub_filter      &lt;/head&gt;
+        '&lt;/head&gt;&lt;script language="javascript" src="$script"&gt;&lt;/script&gt;';
+    sub_filter_once on;
+}
+</example>
+</para>
+
+</section>
+
+
+<section id="directives" name="Директивы">
+
+<directive name="sub_filter">
+<syntax><value>строка</value> <value>замена</value></syntax>
+<default/>
+<context>http</context>
+<context>server</context>
+<context>location</context>
+
+<para>
+Задаёт строку, которую нужно заменить, и строку замены.
+Заменяемая строка проверяется без учёта регистра.
+В строке замены можно использовать переменные.
+</para>
+
+</directive>
+
+
+<directive name="sub_filter_last_modified">
+<syntax><literal>on</literal> | <literal>off</literal></syntax>
+<default>off</default>
+<context>http</context>
+<context>server</context>
+<context>location</context>
+<appeared-in>1.5.1</appeared-in>
+
+<para>
+Позволяет сохранить поле заголовка <header>Last-Modified</header>
+исходного ответа во время замены
+для лучшего кэширования ответов.
+</para>
+
+<para>
+По умолчанию поле заголовка удаляется, так как содержимое ответа
+изменяется во время обработки.
+</para>
+
+</directive>
+
+
+<directive name="sub_filter_once">
+<syntax><literal>on</literal> | <literal>off</literal></syntax>
+<default>on</default>
+<context>http</context>
+<context>server</context>
+<context>location</context>
+
+<para>
+Определяет, сколько раз нужно искать заменяемую строку: один
+раз или несколько раз.
+</para>
+
+</directive>
+
+
+<directive name="sub_filter_types">
+<syntax><value>mime-тип</value> ...</syntax>
+<default>text/html</default>
+<context>http</context>
+<context>server</context>
+<context>location</context>
+
+<para>
+Разрешает замену строк в ответах с указанными MIME-типами
+в дополнение к “<literal>text/html</literal>”.
+Специальное значение “<literal>*</literal>” соответствует любому MIME-типу
+(0.8.29).
+</para>
+
+</directive>
+
+</section>
+
+</module>

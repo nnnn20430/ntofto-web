@@ -1,0 +1,658 @@
+<?xml version="1.0"?>
+
+<!--
+  Copyright (C) Igor Sysoev
+  Copyright (C) Nginx, Inc.
+  -->
+
+<!DOCTYPE module SYSTEM "../../../dtd/module.dtd">
+
+<module name="Основная функциональность"
+        link="/ru/docs/ngx_core_module.html"
+        lang="ru"
+        rev="11">
+
+<section id="example" name="Пример конфигурации">
+
+<para>
+<example>
+user www www;
+worker_processes 2;
+
+error_log /var/log/nginx-error.log info;
+
+events {
+    use kqueue;
+    worker_connections 2048;
+}
+
+...
+</example>
+</para>
+
+</section>
+
+
+<section id="directives" name="Директивы">
+
+<directive name="accept_mutex">
+<syntax><literal>on</literal> | <literal>off</literal></syntax>
+<default>on</default>
+<context>events</context>
+
+<para>
+Если <literal>accept_mutex</literal> включён,
+рабочие процессы будут принимать новые соединения по очереди.
+В противном случае о новых соединениях будет сообщаться сразу всем рабочим
+процессам, и при низкой интенсивности поступления новых соединений
+часть рабочих процессов может работать вхолостую.
+<note>
+Использование метода обработки соединений
+<link doc="events.xml" id="rtsig"/>
+требует обязательного включения <literal>accept_mutex</literal>.
+</note>
+</para>
+
+</directive>
+
+
+<directive name="accept_mutex_delay">
+<syntax><value>время</value></syntax>
+<default>500ms</default>
+<context>events</context>
+
+<para>
+При включённом <link id="accept_mutex"/> задаёт максимальное время,
+в течение которого рабочий процесс вновь попытается начать принимать
+новые соединения, если в настоящий момент новые соединения принимает
+другой рабочий процесс.
+</para>
+
+</directive>
+
+
+<directive name="daemon">
+<syntax><literal>on</literal> | <literal>off</literal></syntax>
+<default>on</default>
+<context>main</context>
+
+<para>
+Определяет, будет ли nginx запускаться в режиме демона.
+Используется в основном для разработки.
+</para>
+
+</directive>
+
+
+<directive name="debug_connection">
+<syntax>
+    <value>адрес</value> |
+    <value>CIDR</value> |
+    <literal>unix:</literal></syntax>
+<default/>
+<context>events</context>
+
+<para>
+Включает отладочный лог для отдельных клиентских соединений.
+Для остальных соединений используется уровень лога, заданный директивой
+<link id="error_log"/>.
+Отлаживаемые соединения задаются IPv4 или IPv6 (1.3.0, 1.2.1)
+адресом или сетью.
+Соединение может быть также задано при помощи имени хоста.
+Отладочный лог для соединений через UNIX-сокеты (1.3.0, 1.2.1)
+включается параметром “<literal>unix:</literal>”.
+<example>
+events {
+    debug_connection 127.0.0.1;
+    debug_connection localhost;
+    debug_connection 192.0.2.0/24;
+    debug_connection ::1;
+    debug_connection 2001:0db8::/32;
+    debug_connection unix:;
+    ...
+}
+</example>
+<note>
+Для работы директивы необходимо сконфигурировать nginx с параметром
+<literal>--with-debug</literal>,
+см. “<link doc="debugging_log.xml"/>”.
+</note>
+</para>
+
+</directive>
+
+
+<directive name="debug_points">
+<syntax><literal>abort</literal> | <literal>stop</literal></syntax>
+<default/>
+<context>main</context>
+
+<para>
+Эта директива используется для отладки.
+</para>
+
+<para>
+В случае обнаружения внутренней ошибки, например, утечки сокетов в момент
+перезапуска рабочих процессов, включение <literal>debug_points</literal>
+приводит к созданию core-файла (<literal>abort</literal>)
+или остановке процесса (<literal>stop</literal>) с целью последующей
+диагностики с помощью системного отладчика.
+</para>
+
+</directive>
+
+
+<directive name="error_log">
+<syntax>
+<value>файл</value> | <literal>stderr</literal> |
+<literal>syslog:</literal><literal>server</literal>=<value>адрес</value>[,<value>параметр</value>=<value>значение</value>]
+[<literal>debug</literal> |
+<literal>info</literal> |
+<literal>notice</literal> |
+<literal>warn</literal> |
+<literal>error</literal> |
+<literal>crit</literal> |
+<literal>alert</literal> |
+<literal>emerg</literal>]</syntax>
+<default>logs/error.log error</default>
+<context>main</context>
+<context>http</context>
+<context>server</context>
+<context>location</context>
+
+<para>
+Конфигурирует запись в лог.
+На одном уровне может использоваться несколько логов (1.5.2).
+</para>
+
+<para>
+Первый параметр задаёт файл, который будет хранить лог.
+<!--
+Если имя файла не абсолютное, к нему добавляется в начало путь префикса.
+-->
+Специальное значение <literal>stderr</literal> выбирает стандартный файл ошибок.
+Запись в <link doc="syslog.xml">syslog</link> настраивается указанием префикса
+“<literal>syslog:</literal>”.
+</para>
+
+<para>
+Второй параметр определяет уровень лога.
+Уровни лога, указанные выше, перечислены в порядке возрастания важности.
+При установке определённого уровня в лог попадают все сообщения
+указанного уровня и уровней большей важности.
+Например, при стандартном уровне <literal>error</literal> в лог попадают
+сообщения уровней <literal>error</literal>, <literal>crit</literal>,
+<literal>alert</literal> и <literal>emerg</literal>.
+Если этот параметр не задан, используется <literal>error</literal>.
+<note>
+Для работы уровня лога <literal>debug</literal> необходимо сконфигурировать
+nginx с <literal>--with-debug</literal>,
+см. “<link doc="debugging_log.xml"/>”.
+</note>
+</para>
+
+</directive>
+
+
+<directive name="env">
+<syntax><value>переменная</value>[=<value>значение</value>]</syntax>
+<default>TZ</default>
+<context>main</context>
+
+<para>
+По умолчанию nginx удаляет все переменные окружения, унаследованные
+от своего родительского процесса, кроме переменной TZ.
+Эта директива позволяет сохранить часть унаследованных переменных,
+поменять им значения или же создать новые переменные окружения.
+Эти переменные затем:
+<list type="bullet">
+
+<listitem>
+наследуются во время
+<link doc="control.xml" id="upgrade">обновления исполняемого файла на лету</link>;
+</listitem>
+
+<listitem>
+используются модулем
+<link doc="http/ngx_http_perl_module.xml">ngx_http_perl_module</link>;
+</listitem>
+
+<listitem>
+используются рабочими процессами.
+Следует иметь в виду, что управление поведением системных библиотек
+подобным образом возможно не всегда, поскольку зачастую библиотеки используют
+переменные только во время инициализации, то есть ещё до того, как их
+можно задать с помощью данной директивы.
+Исключением из этого является упомянутое выше
+<link doc="control.xml" id="upgrade">обновление исполняемого файла на лету</link>.
+</listitem>
+
+</list>
+</para>
+
+<para>
+Если переменная TZ не описана явно, то она всегда наследуется
+и всегда доступна модулю
+<link doc="http/ngx_http_perl_module.xml">ngx_http_perl_module</link>.
+</para>
+
+<para>
+Пример использования:
+<example>
+env MALLOC_OPTIONS;
+env PERL5LIB=/data/site/modules;
+env OPENSSL_ALLOW_PROXY_CERTS=1;
+</example>
+</para>
+
+<para>
+<note>
+Переменная окружения NGINX используется для внутренних целей nginx
+и не должна устанавливаться непосредственно самим пользователем.
+</note>
+</para>
+
+</directive>
+
+
+<directive name="events">
+<syntax block="yes"/>
+<default/>
+<context>main</context>
+
+<para>
+Предоставляет контекст конфигурационного файла, в котором указываются
+директивы, влияющие на обработку соединений.
+</para>
+
+</directive>
+
+
+<directive name="include">
+<syntax><value>файл</value> | <value>маска</value></syntax>
+<default/>
+<context/>
+
+<para>
+Включает в конфигурацию другой <value>файл</value> или файлы,
+подходящие под заданную маску.
+Включаемые файлы должны содержать синтаксически верные директивы и блоки.
+</para>
+
+<para>
+Пример использования:
+<example>
+include mime.types;
+include vhosts/*.conf;
+</example>
+</para>
+
+</directive>
+
+
+<directive name="lock_file">
+<syntax><value>файл</value></syntax>
+<default>logs/nginx.lock</default>
+<context>main</context>
+
+<para>
+Для реализации <link id="accept_mutex"/> и сериализации доступа к
+разделяемой памяти nginx использует механизм блокировок.
+На большинстве систем блокировки реализованы с помощью атомарных
+операций, и эта директива игнорируется.
+Для остальных систем применяется механизм файлов блокировок.
+Эта директива задаёт префикс имён файлов блокировок.
+</para>
+
+</directive>
+
+
+<directive name="master_process">
+<syntax><literal>on</literal> | <literal>off</literal></syntax>
+<default>on</default>
+<context>main</context>
+
+<para>
+Определяет, будут ли запускаться рабочие процессы.
+Эта директива предназначена для разработчиков nginx.
+</para>
+
+</directive>
+
+
+<directive name="multi_accept">
+<syntax><literal>on</literal> | <literal>off</literal></syntax>
+<default>off</default>
+<context>events</context>
+
+<para>
+Если <literal>multi_accept</literal> выключен, рабочий процесс
+за один раз будет принимать только одно новое соединение.
+В противном случае рабочий процесс
+за один раз будет принимать сразу все новые соединения.
+<note>
+Директива игнорируется в случае использования метода обработки соединений
+<link doc="events.xml" id="kqueue"/>, т.к. данный метод сам сообщает
+число новых соединений, ожидающих приёма.
+</note>
+<note>
+Использование метода обработки соединений
+<link doc="events.xml" id="rtsig"/>
+автоматически включает <literal>multi_accept</literal>.
+</note>
+</para>
+
+</directive>
+
+
+<directive name="pcre_jit">
+<syntax><literal>on</literal> | <literal>off</literal></syntax>
+<default>off</default>
+<context>main</context>
+<appeared-in>1.1.12</appeared-in>
+
+<para>
+Разрешает или запрещает использование JIT-компиляции (PCRE JIT)
+для регулярных выражений, известных на момент парсинга конфигурации.
+</para>
+
+<para>
+Использование PCRE JIT способно существенно ускорить обработку
+регулярных выражений.
+<note>
+Для работы JIT необходима библиотека PCRE версии 8.20 или выше,
+собранная с параметром конфигурации <literal>--enable-jit</literal>.
+При сборке библиотеки PCRE вместе с nginx (<literal>--with-pcre=</literal>),
+для включения поддержки JIT необходимо использовать параметр
+конфигурации <literal>--with-pcre-jit</literal>.
+</note>
+</para>
+
+</directive>
+
+
+<directive name="pid">
+<syntax><value>файл</value></syntax>
+<default>nginx.pid</default>
+<context>main</context>
+
+<para>
+Задаёт <value>файл</value>, в котором будет храниться номер (PID) основного процесса.
+</para>
+
+</directive>
+
+
+<directive name="ssl_engine">
+<syntax><value>устройство</value></syntax>
+<default/>
+<context>main</context>
+
+<para>
+Задаёт название аппаратного SSL-акселератора.
+</para>
+
+</directive>
+
+
+<directive name="timer_resolution">
+<syntax><value>интервал</value></syntax>
+<default/>
+<context>main</context>
+
+<para>
+Уменьшает разрешение таймеров времени в рабочих процессах, за счёт
+чего уменьшается число системных вызовов <c-func>gettimeofday</c-func>.
+По умолчанию <c-func>gettimeofday</c-func> вызывается после каждой
+операции получения событий из ядра.
+При уменьшении разрешения <c-func>gettimeofday</c-func> вызывается только
+один раз за указанный <value>интервал</value>.
+</para>
+
+<para>
+Пример использования:
+<example>
+timer_resolution 100ms;
+</example>
+</para>
+
+<para>
+Внутренняя реализация интервала зависит от используемого метода:
+<list type="bullet">
+
+<listitem>
+фильтр <c-def>EVFILT_TIMER</c-def> при использовании <literal>kqueue</literal>;
+</listitem>
+
+<listitem>
+<c-func>timer_create</c-func> при использовании <literal>eventport</literal>;
+</listitem>
+
+<listitem>
+и <c-func>setitimer</c-func> во всех остальных случаях.
+</listitem>
+
+</list>
+</para>
+
+</directive>
+
+
+<directive name="use">
+<syntax><value>метод</value></syntax>
+<default/>
+<context>events</context>
+
+<para>
+Задаёт <value>метод</value>, используемый для
+<link doc="events.xml">обработки соединений</link>.
+Обычно нет необходимости задавать его явно, поскольку по умолчанию
+nginx сам выбирает наиболее эффективный метод.
+</para>
+
+</directive>
+
+
+<directive name="user">
+<syntax><value>пользователь</value> [<value>группа</value>]</syntax>
+<default>nobody nobody</default>
+<context>main</context>
+
+<para>
+Задаёт пользователя и группу, с правами которого будут работать
+рабочие процессы.
+Если <value>группа</value> не задана, то используется группа, имя
+которой совпадает с именем пользователя.
+</para>
+
+</directive>
+
+
+<directive name="worker_aio_requests">
+<syntax><value>число</value></syntax>
+<default>32</default>
+<context>events</context>
+<appeared-in>1.1.4</appeared-in>
+<appeared-in>1.0.7</appeared-in>
+
+<para>
+При использовании <link doc="http/ngx_http_core_module.xml" id="aio"/>
+совместно с методом обработки соединений
+<link doc="../docs/events.xml" id="epoll"/>,
+задаёт максимальное <value>число</value> ожидающих обработки операций
+асинхронного ввода-вывода для одного рабочего процесса.
+</para>
+
+</directive>
+
+
+<directive name="worker_connections">
+<syntax><value>число</value></syntax>
+<default>512</default>
+<context>events</context>
+
+<para>
+Задаёт максимальное число соединений, которые одновременно
+может открыть рабочий процесс.
+</para>
+
+<para>
+Следует иметь в виду, что в это число входят все соединения
+(в том числе, например, соединения с проксируемыми серверами),
+а не только соединения с клиентами.
+Стоит также учитывать, что фактическое число одновременных
+соединений не может превышать действующего ограничения на
+максимальное число открытых файлов,
+которое можно изменить с помощью <link id="worker_rlimit_nofile"/>.
+</para>
+
+</directive>
+
+
+<directive name="worker_cpu_affinity">
+<syntax><value>маска_CPU</value> ...</syntax>
+<default/>
+<context>main</context>
+
+<para>
+Привязывает рабочие процессы к группам процессоров.
+Каждая группа процессоров задаётся битовой маской
+разрешённых к использованию процессоров.
+Для каждого рабочего процесса должна быть задана отдельная группа.
+По умолчанию рабочие процессы не привязаны к конкретным процессорам.
+</para>
+
+<para>
+Например,
+<example>
+worker_processes    4;
+worker_cpu_affinity 0001 0010 0100 1000;
+</example>
+привязывает каждый рабочий процесс к отдельному процессору, тогда как
+<example>
+worker_processes    2;
+worker_cpu_affinity 0101 1010;
+</example>
+привязывает первый рабочий процесс к CPU0/CPU2,
+а второй — к CPU1/CPU3.
+Второй пример пригоден для hyper-threading.
+</para>
+
+<para>
+<note>
+Директива доступна только на FreeBSD и Linux.
+</note>
+</para>
+
+</directive>
+
+
+<directive name="worker_priority">
+<syntax><value>число</value></syntax>
+<default>0</default>
+<context>main</context>
+
+<para>
+Задаёт приоритет планирования рабочих процессов подобно тому,
+как это делается командой <command>nice</command>: отрицательное
+<value>число</value>
+означает более высокий приоритет.
+Диапазон возможных значений, как правило, варьируется от -20 до 20.
+</para>
+
+<para>
+Пример использования:
+<example>
+worker_priority -10;
+</example>
+</para>
+
+</directive>
+
+
+<directive name="worker_processes">
+<syntax><value>число</value> | <literal>auto</literal></syntax>
+<default>1</default>
+<context>main</context>
+
+<para>
+Задаёт число рабочих процессов.
+</para>
+
+<para>
+Оптимальное значение зависит от множества факторов, включая
+(но не ограничиваясь ими) число процессорных ядер, число
+жёстких дисков с данными и картину нагрузок.
+Если затрудняетесь в выборе правильного значения, можно начать
+с установки его равным числу процессорных ядер
+(значение “<literal>auto</literal>” пытается определить его
+автоматически).
+<note>
+Параметр <literal>auto</literal> поддерживается только начиная
+с версий 1.3.8 и 1.2.5.
+</note>
+</para>
+
+</directive>
+
+
+<directive name="worker_rlimit_core">
+<syntax><value>размер</value></syntax>
+<default/>
+<context>main</context>
+
+<para>
+Изменяет ограничение на наибольший размер core-файла
+(<c-def>RLIMIT_CORE</c-def>) для рабочих процессов.
+Используется для увеличения ограничения без перезапуска основного процесса.
+</para>
+
+</directive>
+
+
+<directive name="worker_rlimit_nofile">
+<syntax><value>число</value></syntax>
+<default/>
+<context>main</context>
+
+<para>
+Изменяет ограничение на максимальное число открытых файлов
+(<c-def>RLIMIT_NOFILE</c-def>) для рабочих процессов.
+Используется для увеличения ограничения без перезапуска основного процесса.
+</para>
+
+</directive>
+
+
+<directive name="worker_rlimit_sigpending">
+<syntax><value>число</value></syntax>
+<default/>
+<context>main</context>
+
+<para>
+На системах с поддержкой метода обработки соединений
+<link doc="events.xml" id="rtsig"/>,
+изменяет ограничение на размер очереди сигналов
+(<c-def>RLIMIT_SIGPENDING</c-def>) для рабочих процессов.
+Используется для увеличения ограничения без перезапуска основного процесса.
+</para>
+
+</directive>
+
+
+<directive name="working_directory">
+<syntax><value>каталог</value></syntax>
+<default/>
+<context>main</context>
+
+<para>
+Задаёт каталог, который будет текущим для рабочего процесса.
+Основное применение — запись core-файла, в этом случае рабочий
+процесс должен иметь права на запись в этот каталог.
+</para>
+
+</directive>
+
+</section>
+
+</module>

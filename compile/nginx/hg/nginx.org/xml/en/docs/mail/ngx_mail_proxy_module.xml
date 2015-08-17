@@ -1,0 +1,157 @@
+<?xml version="1.0"?>
+
+<!--
+  Copyright (C) 2006, 2007 Anton Yuzhaninov
+  Copyright (C) Nginx, Inc.
+  -->
+
+<!DOCTYPE module SYSTEM "../../../../dtd/module.dtd">
+
+<module name="Module ngx_mail_proxy_module"
+        link="/en/docs/mail/ngx_mail_proxy_module.html"
+        lang="en"
+        rev="2">
+
+<section id="directives" name="Directives">
+
+<!--
+<directive name="proxy">
+<syntax><literal>on</literal> | <literal>off</literal></syntax>
+<default>off</default>
+<context>mail</context>
+<context>server</context>
+
+<para>
+Not tested anywhere in the current version.
+</para>
+
+</directive>
+-->
+
+
+<directive name="proxy_buffer">
+<syntax><value>size</value></syntax>
+<default>4k|8k</default>
+<context>mail</context>
+<context>server</context>
+
+<para>
+Sets the size of the buffer used for proxying.
+By default, the buffer size is equal to one memory page.
+Depending on a platform, it is either 4K or 8K.
+</para>
+
+</directive>
+
+
+<directive name="proxy_pass_error_message">
+<syntax><literal>on</literal> | <literal>off</literal></syntax>
+<default>off</default>
+<context>mail</context>
+<context>server</context>
+
+<para>
+Indicates whether to pass the error message obtained during
+the authentication on the backend to the client.
+</para>
+
+<para>
+Usually, if the authentication in nginx is a success,
+the backend cannot return an error.
+If it nevertheless returns an error,
+it means some internal error has occurred.
+In such case the backend message can contain information
+that should not be shown to the client.
+However, responding with an error for the correct password
+is a normal behavior for some POP3 servers.
+For example, CommuniGatePro informs a user about
+<link url="http://www.stalker.com/CommuniGatePro/Alerts.html#Quota">mailbox
+overflow</link> or other events by periodically outputting the
+<link url="http://www.stalker.com/CommuniGatePro/POP.html#Alerts">authentication
+error</link>.
+The directive should be enabled in this case.
+</para>
+
+</directive>
+
+
+<directive name="proxy_timeout">
+<syntax><value>timeout</value></syntax>
+<default>24h</default>
+<context>mail</context>
+<context>server</context>
+
+<para>
+Defines a timeout used after the proxying to the backend had started.
+</para>
+
+</directive>
+
+
+<directive name="xclient">
+<syntax><literal>on</literal> | <literal>off</literal></syntax>
+<default>on</default>
+<context>mail</context>
+<context>server</context>
+
+<para>
+Enables or disables the passing of the
+<link url="http://www.postfix.org/XCLIENT_README.html">XCLIENT</link>
+command with client parameters when connecting to the SMTP backend.
+</para>
+
+<para>
+With <literal>XCLIENT</literal>, the MTA is able to write client information
+to the log and apply various limitations based on this data.
+</para>
+
+<para>
+If <literal>XCLIENT</literal> is enabled
+then nginx passes the following commands when connecting to the backend:
+<list type="bullet">
+<listitem>
+<literal>EHLO</literal> with the
+<link doc="ngx_mail_core_module.xml" id="server_name">server name</link>
+</listitem>
+
+<listitem>
+<literal>
+XCLIENT
+</literal>
+</listitem>
+
+<listitem>
+<literal>EHLO</literal> or <literal>HELO</literal>,
+as passed by the client
+</listitem>
+</list>
+</para>
+
+<para>
+If the name
+<link doc="ngx_mail_core_module.xml" id="resolver">found</link>
+by the client IP address points to the same address,
+it is passed in the <literal>NAME</literal> parameter
+of the <literal>XCLIENT</literal> command.
+If the name could not be found, points to a different address,
+or <link doc="ngx_mail_core_module.xml" id="resolver"/> is not specified,
+the <literal>[UNAVAILABLE]</literal> is passed
+in the <literal>NAME</literal> parameter.
+If an error has occurred in the process of resolving,
+the <literal>[TEMPUNAVAIL]</literal> value is used.
+</para>
+
+<para>
+If <literal>XCLIENT</literal> is disabled
+then nginx passes the <literal>EHLO</literal> command with the
+<link doc="ngx_mail_core_module.xml" id="server_name">server name</link>
+when connecting to the backend if the client has passed
+<literal>EHLO</literal>,
+or <literal>HELO</literal> with the server name, otherwise.
+</para>
+
+</directive>
+
+</section>
+
+</module>

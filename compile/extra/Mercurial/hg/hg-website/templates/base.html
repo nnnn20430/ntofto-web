@@ -1,0 +1,79 @@
+﻿<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+       "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+        <link href="{{ url_for('static', filename='css/styles.css') }}" type="text/css" rel="stylesheet">
+        <script type="text/javascript" src="{{ url_for('static', filename='js/common.js') }}"></script>
+        <script type="text/javascript" src="{{ url_for('static', filename='sources.js') }}"></script>
+        <script type="text/javascript" src="{{ url_for('static', filename='js/download.js') }}"></script>
+        <script language="javascript">
+          Downloader.init(sources);
+          var dl = Downloader.select();
+        </script>
+        <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico">
+
+        <title>Mercurial SCM</title>
+    </head>
+    <body id="home">
+        <h1 id="logo"><a href="/">mercurial</a></h1>
+            
+        <ul id="nav">
+            <li><a href="/about">about</a></li>
+            <li><a href="/guide">guide</a></li>
+            <li><a href="/downloads">download</a></li>
+            <li><a href="http://mercurial.selenic.com/wiki/UsingExtensions">extensions</a></li>
+            <li><a href="http://mercurial.selenic.com/wiki/">news/wiki</a></li>
+        </ul>
+        
+        <form id="search" method="get" action="http://mercurial.selenic.com/wiki/Mercurial">
+        <input type="hidden" name="action" value="fullsearch">
+        <input type="hidden" name="context" value="180">
+            <fieldset>
+                <legend>Search form</legend>
+                <label for="keyword">keyword</label>
+                <input class="text" type="text" name="value"
+                value="Search the Wiki" id="keyword" onclick="resetBar();">
+                <input class="submit" type="submit" value="Title"
+                name="titlesearch" alt="Search Titles"> 
+            </fieldset>
+        </form>
+        
+        <div id="content">
+            {% block main %}
+                <div class="row">
+                    <div class="col big">
+                        {% block content %}
+                            No content on this page yet.
+                        {% endblock %}
+                    </div>
+                    <div class="col">
+                        {% block sidebar %}
+                        <a class="download" href="/downloads" onClick="return dl.download();">
+                                    <strong>Download now</strong>
+                                    Mercurial <em><script language="Javascript">dl.write('version');</script></em>
+                                    <span><script language="javascript">dl.write('desc');</script></span>
+                        </a>
+                        <dl>
+                            <dt>Another OS?<br><em>Get Mercurial for:</em></dt>
+                            <dd><a href="/downloads">Mac OS X</a></dd>
+                            <dd><a href="/downloads">Windows</a></dd>
+                            <dd><a href="/downloads">other</a></dd>
+                        </dl>
+                        {% endblock %}
+                    </div>
+                </div>
+            {% endblock %}
+        </div>
+        
+        <div id="footer">
+            <a href="https://plus.google.com/112477627281544607334"
+                rel="publisher">G+</a> /
+            design by <a href="http://www.designpunct.ro">punct</a> /
+            design courtesy of <a href="http://www.bitbucket.org/">bitbucket</a> /
+            licensed under <a href="http://www.gnu.org/licenses/gpl-2.0.txt">GPLv2</a> /
+            <a href="/thepage">about this page</a>
+        </div>
+        
+    </body>
+</html>

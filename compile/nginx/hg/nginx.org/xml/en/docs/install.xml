@@ -1,0 +1,60 @@
+<!--
+  Copyright (C) Igor Sysoev
+  Copyright (C) Nginx, Inc.
+  -->
+
+<!DOCTYPE article SYSTEM "../../../dtd/article.dtd">
+
+<article name="Installing nginx"
+         link="/en/docs/install.html"
+         lang="en"
+         rev="2"
+         toc="no">
+
+<section>
+
+<para>
+nginx can be installed differently, depending on the operating system.
+</para>
+
+</section>
+
+
+<section id="linux" name="Installation on Linux">
+
+<para>
+For Linux, nginx <link doc="../linux_packages.xml">packages</link>
+from nginx.org can be used.
+</para>
+
+</section>
+
+
+<section id="freebsd" name="Installation on FreeBSD">
+
+<para>
+On FreeBSD, nginx can be installed either from the <link
+url="http://www.freebsd.org/doc/handbook/pkgng-intro.html">packages</link>
+or through the
+<link url="http://www.freebsd.org/doc/handbook/ports-using.html">ports</link>
+system.
+The ports system provides greater flexibility, allowing selection among
+a wide range of options.
+The port will compile nginx with the specified options and install it.
+</para>
+
+</section>
+
+
+<section id="source_install" name="Building from Sources">
+
+<para>
+If some special functionality is required, not available with packages and
+ports, nginx can also be compiled from source files.
+While more flexible, this approach may be complex for a beginner.
+For more information, see <link doc="configure.xml"/>.
+</para>
+
+</section>
+
+</article>

@@ -1,0 +1,236 @@
+<?xml version="1.0"?>
+
+<!--
+  Copyright (C) Nginx, Inc.
+  -->
+
+<!DOCTYPE module SYSTEM "../../../../dtd/module.dtd">
+
+<module name="Module ngx_http_mp4_module"
+        link="/en/docs/http/ngx_http_mp4_module.html"
+        lang="en"
+        rev="7">
+
+<section id="summary">
+
+<para>
+The <literal>ngx_http_mp4_module</literal> module provides pseudo-streaming
+server-side support for MP4 files.
+Such files typically have the <path>.mp4</path>, <path>.m4v</path>,
+or <path>.m4a</path> filename extensions.
+</para>
+
+<para>
+Pseudo-streaming works in alliance with a compatible Flash player.
+The player sends an HTTP request to the server with the start time
+specified in the query string argument (named simply
+<literal>start</literal>
+and specified in seconds), and the server responds with the stream
+such that its start position corresponds to the requested time,
+for example:
+<example>
+http://example.com/elephants_dream.mp4?start=238.88
+</example>
+This allows performing a random seeking at any time, or starting playback
+in the middle of the timeline.
+</para>
+
+<para>
+To support seeking, H.264-based formats store metadata
+in a so-called “moov atom”.
+It is a part of the file that holds the index information for the
+whole file.
+</para>
+
+<para>
+To start playback, the player first needs to read metadata.
+This is done by sending a special request with the
+<literal>start=0</literal> argument.
+A lot of encoding software insert the metadata at
+the end of the file.
+This is suboptimal for pseudo-streaming, because the player
+has to download the entire file before starting playback.
+If the metadata are located at the beginning of the file,
+it is enough for nginx to simply start sending back the file contents.
+If the metadata are located at the end of the file,
+nginx must read the entire file and prepare a new stream so that
+the metadata come before the media data.
+This involves some CPU, memory, and disk I/O overhead,
+so it is a good idea to
+<link
+url="http://flowplayer.org/plugins/streaming/pseudostreaming.html#prepare">
+prepare an original file for pseudo-streaming</link> in advance,
+rather than having nginx do this on every such request.
+</para>
+
+<para>
+The module also supports the <literal>end</literal> argument of an HTTP request
+(1.5.13) which sets the end point of playback.
+The <literal>end</literal> argument can be specified with the
+<literal>start</literal> argument
+or separately:
+<example>
+http://example.com/elephants_dream.mp4?start=238.88&amp;end=555.55
+</example>
+</para>
+
+<para>
+For a matching request with a non-zero
+<literal>start</literal> or <literal>end</literal>
+argument, nginx will read the metadata from the file, prepare the
+stream with the requested time range, and send it to the client.
+This has the same overhead as described above.
+</para>
+
+<para>
+If a matching request does not include the
+<literal>start</literal> and <literal>end</literal>
+arguments, there is no overhead, and the file is sent simply as a static
+resource.
+Some players also support byte-range requests, and thus do not require
+this module.
+</para>
+
+<para>
+This module is not built by default, it should be enabled with the
+<literal>--with-http_mp4_module</literal>
+configuration parameter.
+<note>
+If a third-party mp4 module was previously used, it should be disabled.
+</note>
+</para>
+
+<para>
+A similar pseudo-streaming support for FLV files is provided by the
+<link doc="ngx_http_flv_module.xml">ngx_http_flv_module</link> module.
+</para>
+
+</section>
+
+
+<section id="example" name="Example Configuration">
+
+<para>
+<example>
+location /video/ {
+    mp4;
+    mp4_buffer_size       1m;
+    mp4_max_buffer_size   5m;
+    mp4_limit_rate        on;
+    mp4_limit_rate_after  30s;
+}
+</example>
+</para>
+
+</section>
+
+
+<section id="directives" name="Directives">
+
+<directive name="mp4">
+<syntax/>
+<default/>
+<context>location</context>
+
+<para>
+Turns on module processing in a surrounding location.
+</para>
+
+</directive>
+
+
+<directive name="mp4_buffer_size">
+<syntax><value>size</value></syntax>
+<default>512K</default>
+<context>http</context>
+<context>server</context>
+<context>location</context>
+
+<para>
+Sets the initial <value>size</value> of the buffer used for
+processing MP4 files.
+</para>
+
+</directive>
+
+
+<directive name="mp4_max_buffer_size">
+<syntax><value>size</value></syntax>
+<default>10M</default>
+<context>http</context>
+<context>server</context>
+<context>location</context>
+
+<para>
+During metadata processing, a larger buffer may become necessary.
+Its size cannot exceed the specified <value>size</value>,
+or else nginx will return the
+<http-status code="500" text="Internal Server Error"/> server error,
+and log the following message:
+<example>
+"/some/movie/file.mp4" mp4 moov atom is too large:
+12583268, you may want to increase mp4_max_buffer_size
+</example>
+</para>
+
+</directive>
+
+
+<directive name="mp4_limit_rate">
+<syntax>
+    <literal>on</literal> |
+    <literal>off</literal> |
+    <value>factor</value></syntax>
+<default>off</default>
+<context>http</context>
+<context>server</context>
+<context>location</context>
+
+<para>
+Limits the rate of response transmission to a client.
+The rate is limited based on the average bitrate of the
+MP4 file served.
+To calculate the rate, the bitrate is multiplied by the specified
+<value>factor</value>.
+The special value “<literal>on</literal>” corresponds to the factor of 1.1.
+The special value “<literal>off</literal>” disables rate limiting.
+The limit is set per a request, and so if a client simultaneously opens
+two connections, the overall rate will be twice as much
+as the specified limit.
+</para>
+
+<para>
+<note>
+This directive is available as part of our
+<commercial_version>commercial subscription</commercial_version>.
+</note>
+</para>
+
+</directive>
+
+
+<directive name="mp4_limit_rate_after">
+<syntax><value>time</value></syntax>
+<default>60s</default>
+<context>http</context>
+<context>server</context>
+<context>location</context>
+
+<para>
+Sets the initial amount of media data (measured in playback time)
+after which the further transmission of the response to a client
+will be rate limited.
+</para>
+
+<para>
+<note>
+This directive is available as part of our
+<commercial_version>commercial subscription</commercial_version>.
+</note>
+</para>
+
+</directive>
+
+</section>
+
+</module>

@@ -1,0 +1,111 @@
+<!--
+  Copyright (C) Igor Sysoev
+  Copyright (C) Nginx, Inc.
+  -->
+
+<!DOCTYPE article SYSTEM "../../../dtd/article.dtd">
+
+<article name="Методы обработки соединений"
+         link="/ru/docs/events.html"
+         lang="ru"
+         rev="2">
+
+<section>
+
+<para>
+nginx поддерживает различные методы обработки соединений.
+Наличие того или иного метода зависит от используемой платформы.
+Если на платформе доступно сразу несколько методов, nginx обычно
+сам выбирает наиболее эффективный метод.
+Однако, при необходимости можно явно выбрать метод обработки
+соединений с помощью директивы
+<link doc="ngx_core_module.xml" id="use"/>.
+</para>
+
+<para>
+Поддерживаются следующие методы обработки соединений:
+<list type="bullet">
+
+<listitem id="select">
+<para>
+<literal>select</literal>&mdash;стандартный метод.
+Модуль для поддержки этого метода собирается автоматически,
+если на платформе не обнаружено более эффективного метода.
+Можно принудительно разрешить или запретить сборку этого модуля
+с помощью параметров <literal>--with-select_module</literal> и
+<literal>--without-select_module</literal>.
+</para>
+</listitem>
+
+<listitem id="poll">
+<para>
+<literal>poll</literal>&mdash;стандартный метод.
+Модуль для поддержки этого метода собирается автоматически,
+если на платформе не обнаружено более эффективного метода.
+Можно принудительно разрешить или запретить сборку этого модуля
+с помощью параметров <literal>--with-poll_module</literal> и
+<literal>--without-poll_module</literal>.
+</para>
+</listitem>
+
+<listitem id="kqueue">
+<para>
+<literal>kqueue</literal>&mdash;эффективный метод, используемый
+во FreeBSD 4.1+, OpenBSD 2.9+, NetBSD 2.0 и Mac OS X.
+</para>
+</listitem>
+
+<listitem id="epoll">
+<para>
+<literal>epoll</literal>&mdash;эффективный метод, используемый
+в Linux 2.6+.
+<note>
+В некоторых старых дистрибутивах, например SuSE 8.2,
+есть патчи для поддержки epoll ядром 2.4.
+</note>
+</para>
+</listitem>
+
+<listitem id="rtsig">
+<para>
+<literal>rtsig</literal>&mdash;real time signals, эффективный метод,
+используемый в Linux 2.2.19+.
+По умолчанию в общесистемной очереди событий может одновременно
+находиться не более 1024 сигналов.
+На нагруженных серверах может потребоваться увеличить размер очереди
+с помощью параметра ядра <path>/proc/sys/kernel/rtsig-max</path>.
+Однако, начиная с Linux 2.6.6-mm2, этого параметра уже нет и для каждого
+процесса существует отдельная очередь сигналов, размер которой
+ограничивается с помощью <literal>RLIMIT_SIGPENDING</literal>
+и может быть изменён с помощью
+<link doc="ngx_core_module.xml" id="worker_rlimit_sigpending"/>.
+</para>
+
+<para>
+При переполнении очереди nginx сбрасывает её и начинает обрабатывать
+соединения с помощью метода <literal>poll</literal> до тех пор,
+пока ситуация не нормализуется.
+</para>
+</listitem>
+
+<listitem id="devpoll">
+<para>
+<literal>/dev/poll</literal>&mdash;эффективный метод, используемый
+в Solaris 7 11/99+, HP/UX 11.22+ (eventport), IRIX 6.5.15+
+и Tru64 UNIX 5.1A+.
+</para>
+</listitem>
+
+<listitem id="eventport">
+<para>
+<literal>eventport</literal>&mdash;event ports, эффективный метод,
+используемый в Solaris 10.
+</para>
+</listitem>
+
+</list>
+</para>
+
+</section>
+
+</article>

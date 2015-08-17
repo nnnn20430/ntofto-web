@@ -1,0 +1,32 @@
+extract nginx, php, uwsgi archives to new seprate folders
+
+get build-essentials
+# apt-get install build-essential python python-dev
+# pacman -S base-devel python python-dev
+
+for nginx:
+go inside nginx folder open terminal and type:
+$ ./configure --with-http_ssl_module --with-ipv6
+$ make
+
+go inside objs folder and copy nginx binary and ngx_modules.o
+
+
+for php:
+go inside php folder open terminal and type:
+$ ./configure --with-openssl --enable-sockets --enable-bcmath --with-gd
+$ make
+
+for openbay to work you need to configure it using this command:
+$ ./configure --enable-zip --enable-sockets --enable-bcmath --enable-ftp --enable-mbstring --with-openssl --with-gd --with-curl --with-zlib --with-mysql --with-pdo-mysql
+
+go inside sapi/cgi and copy php-cgi binary
+
+
+for uwsgi:
+go inside uwsgi folder open terminal and type:
+$ python uwsgiconfig.py --build cgi
+or
+$ make PROFILE=cgi
+
+just copy uwsgi binary from root folder

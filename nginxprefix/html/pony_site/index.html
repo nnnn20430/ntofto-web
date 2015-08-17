@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+	<body style="margin: 0px;">
+		<img id="alicornTwilight" src="alicorn_by_raikoh_illust-d5vprrk.jpg" alt="you said you wanted ponies" height="834" width="1340"> 
+	</body>
+	<script src="jquery-2.1.3.js"></script>
+	<script type="text/javascript" src="Browser-Ponies/basecfg.js" id="browser-ponies-config"></script><script type="text/javascript" src="Browser-Ponies/browserponies.js" id="browser-ponies-script"></script><script type="text/javascript">/* <![CDATA[ */ (function (cfg) {BrowserPonies.setBaseUrl(cfg.baseurl);BrowserPonies.loadConfig(BrowserPoniesBaseConfig);BrowserPonies.loadConfig(cfg);})({"baseurl":"/pony_site/Browser-Ponies/","fadeDuration":500,"volume":1,"fps":25,"speed":3,"audioEnabled":false,"showFps":false,"showLoadProgress":true,"speakProbability":0.1,"spawn":{"applejack":1,"fluttershy":1,"pinkie pie":1,"rainbow dash":1,"rarity":1,"twilight sparkle":1},"spawnRandom":35,"autostart":true}); /* ]]> */</script>
+	<script>
+		$(function() {
+			 $(window).resize(function() {
+				var $i = $('img#alicornTwilight');
+				var $c = $i.parent();
+				//var i_ar = $i.width() / $i.height(), c_ar = $c.width() / $c.height();            
+				//$i.width(i_ar > c_ar ? $c.width() : $c.height() * (i_ar));
+				$i.width($(window).width());
+				$i.height($(window).height());
+			});
+			$(window).resize();
+		});
+	</script>
+</html>

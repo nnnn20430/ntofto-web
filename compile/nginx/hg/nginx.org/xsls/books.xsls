@@ -1,0 +1,30 @@
+<!--
+  Copyright (C) Igor Sysoev
+  Copyright (C) Nginx, Inc.
+  -->
+
+X:stylesheet {
+
+X:template = "book" {
+
+    <table><tr>
+
+    <td bgcolor="#EEEEEE">
+    <a href="{@link}">
+    <img src="{@cover}" alt="" style="padding: 2pt;" border="0"/>
+    </a>
+    </td>
+
+    <td>
+    X:text {title: } <a href="{@link}">!{@title}</a> <br/>
+    X:text {author: }
+    X:if "@site" { <a href="{@site}">!{@author}</a> } else { !{@author} } <br/>
+    X:if "@translator" { X:text {translator: } !{@translator} <br/> }
+    X:if "@publisher" { X:text {publisher: } !{@publisher} <br/> }
+    X:text {language: } !{@lang}
+    </td>
+
+    </tr></table>
+}
+
+}

@@ -1,0 +1,53 @@
+<?xml version="1.0"?>
+
+<!--
+  Copyright (C) Igor Sysoev
+  Copyright (C) Nginx, Inc.
+  -->
+
+<!DOCTYPE module SYSTEM "../../../../dtd/module.dtd">
+
+<module name="Module ngx_http_empty_gif_module"
+        link="/en/docs/http/ngx_http_empty_gif_module.html"
+        lang="en"
+        rev="1">
+
+<section id="summary">
+
+<para>
+The <literal>ngx_http_empty_gif_module</literal> module emits
+single-pixel transparent GIF.
+</para>
+
+</section>
+
+
+<section id="example" name="Example Configuration">
+
+<para>
+<example>
+location = /_.gif {
+    empty_gif;
+}
+</example>
+</para>
+
+</section>
+
+
+<section id="directives" name="Directives">
+
+<directive name="empty_gif">
+<syntax/>
+<default/>
+<context>location</context>
+
+<para>
+Turns on module processing in a surrounding location.
+</para>
+
+</directive>
+
+</section>
+
+</module>

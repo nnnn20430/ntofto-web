@@ -1,0 +1,176 @@
+<?xml version="1.0"?>
+
+<!--
+  Copyright (C) Igor Sysoev
+  Copyright (C) Nginx, Inc.
+  -->
+
+<!DOCTYPE module SYSTEM "../../../../dtd/module.dtd">
+
+<module name="Модуль ngx_http_referer_module"
+        link="/ru/docs/http/ngx_http_referer_module.html"
+        lang="ru"
+        rev="2">
+
+<section id="summary">
+
+<para>
+Модуль <literal>ngx_http_referer_module</literal> позволяет блокировать доступ
+к сайту для запросов с неверными значениями поля <header>Referer</header> в
+заголовке.
+Следует иметь в виду, что подделать запрос с нужным значением поля
+<header>Referer</header> не составляет большого труда, поэтому цель
+использования данного модуля заключается не в стопроцентном блокировании
+подобных запросов, а в блокировании массового потока запросов, сделанных
+обычными браузерами.
+Нужно также учитывать, что обычные браузеры могут не передавать поле
+<header>Referer</header> даже для верных запросов.
+</para>
+
+</section>
+
+
+<section id="example" name="Пример конфигурации">
+
+<para>
+<example>
+valid_referers none blocked server_names
+               *.example.com example.* www.example.org/galleries/
+               ~\.google\.;
+
+if ($invalid_referer) {
+    return 403;
+}
+</example>
+</para>
+
+</section>
+
+
+<section id="directives" name="Директивы">
+
+<directive name="referer_hash_bucket_size">
+<syntax><value>размер</value></syntax>
+<default>64</default>
+<context>server</context>
+<context>location</context>
+<appeared-in>1.0.5</appeared-in>
+
+<para>
+Задаёт размер корзины хэш-таблиц со значениями <header>Referer</header>.
+Подробнее настройка хэш-таблиц обсуждается в отдельном
+<link doc="../hash.xml">документе</link>.
+</para>
+
+</directive>
+
+
+<directive name="referer_hash_max_size">
+<syntax><value>размер</value></syntax>
+<default>2048</default>
+<context>server</context>
+<context>location</context>
+<appeared-in>1.0.5</appeared-in>
+
+<para>
+Задаёт максимальный <value>размер</value> хэш-таблиц со значениями
+<header>Referer</header>.
+Подробнее настройка хэш-таблиц обсуждается в отдельном
+<link doc="../hash.xml">документе</link>.
+</para>
+
+</directive>
+
+
+<directive name="valid_referers">
+<syntax>
+    <literal>none</literal> |
+    <literal>blocked</literal> |
+    <literal>server_names</literal> |
+    <value>строка</value>
+    ...</syntax>
+<default/>
+<context>server</context>
+<context>location</context>
+
+<para>
+Задаёт значения поля <header>Referer</header> заголовка запроса, при
+которых встроенная переменная <var>$invalid_referer</var> будет иметь
+пустую строку в качестве значения.
+В противном случае значение переменной равно “<literal>1</literal>”.
+Поиск совпадения производится без учёта регистра символов.
+</para>
+
+<para>
+Параметры могут быть следующие:
+<list type="tag">
+
+<tag-name><literal>none</literal></tag-name>
+<tag-desc>
+поле <header>Referer</header> в заголовке запроса отсутствует;
+</tag-desc>
+
+<tag-name><literal>blocked</literal></tag-name>
+<tag-desc>
+поле <header>Referer</header> в заголовке запроса присутствует,
+но его значение удалено межсетевым экраном (firewall) или прокси-сервером;
+к таким значениям относятся строки, не начинающиеся на
+“<literal>http://</literal>” или “<literal>https://</literal>”;
+</tag-desc>
+
+<tag-name><literal>server_names</literal></tag-name>
+<tag-desc>
+в поле <header>Referer</header> заголовка запроса указано одно
+из имён сервера;
+</tag-desc>
+
+<tag-name>произвольная строка</tag-name>
+<tag-desc>
+задаёт имя сервера и необязательное начало URI.
+В начале или конце имени сервера может быть “<literal>*</literal>”.
+При проверке порт сервера в поле <header>Referer</header> игнорируется;
+</tag-desc>
+
+<tag-name>регулярное выражение</tag-name>
+<tag-desc>
+в начале должен быть символ “<literal>~</literal>”.
+Необходимо учитывать, что на совпадение с выражением будет проверяться
+текст, начинающийся после “<literal>http://</literal>”
+или “<literal>https://</literal>”.
+</tag-desc>
+
+</list>
+</para>
+
+<para>
+Пример:
+<example>
+valid_referers none blocked server_names
+               *.example.com example.* www.example.org/galleries/
+               ~\.google\.;
+</example>
+</para>
+
+</directive>
+
+</section>
+
+
+<section id="variables" name="Встроенные переменные">
+
+<para>
+<list type="tag">
+
+<tag-name id="var_invalid_referer"><var>$invalid_referer</var></tag-name>
+<tag-desc>
+Пустая строка, если значение поля <header>Referer</header> заголовка запроса
+считается
+<link id="valid_referers">правильным</link>, иначе “<literal>1</literal>”.
+</tag-desc>
+
+</list>
+</para>
+
+</section>
+
+</module>

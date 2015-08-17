@@ -1,0 +1,78 @@
+<!--
+  Copyright (C) Igor Sysoev
+  Copyright (C) Nginx, Inc.
+  -->
+
+<!DOCTYPE article SYSTEM "../../../dtd/article.dtd">
+
+<article name="Отладочный лог"
+         link="/ru/docs/debugging_log.html"
+         lang="ru"
+         rev="1">
+
+
+<section>
+
+<para>
+Чтобы включить отладочный лог, при сборке следует сконфигурировать nginx с
+поддержкой отладки:
+
+<programlisting>
+./configure --with-debug ...
+</programlisting>
+
+Затем нужно задать уровень <literal>debug</literal> с помощью
+директивы <link doc="ngx_core_module.xml" id="error_log"/>:
+
+<programlisting>
+error_log /path/to/log debug;
+</programlisting>
+
+Бинарная версия nginx для Windows всегда собирается с поддержкой отладочного
+лога, поэтому понадобится лишь задать уровень <literal>debug</literal>.
+</para>
+
+<para>
+Обратите внимание, что переопределение лога без одновременного указания
+уровня <literal>debug</literal> отключит отладочный лог.
+В примере ниже, переопределение лога на уровне
+<link doc="http/ngx_http_core_module.xml" id="server"/>
+отключает отладочный лог для этого сервера:
+<programlisting>
+error_log /path/to/log debug;
+
+http {
+    server {
+        error_log /path/to/log;
+        ...
+</programlisting>
+Чтобы избежать этого, следует либо закомментировать строку, переопределяющую
+лог, либо добавить определение уровня <literal>debug</literal>:
+<programlisting>
+error_log /path/to/log debug;
+
+http {
+    server {
+        error_log /path/to/log debug;
+        ...
+</programlisting>
+</para>
+
+<para>
+Можно включить отладочный лог только для
+<link doc="ngx_core_module.xml" id="debug_connection">определённых
+клиентских адресов</link>:
+
+<programlisting>
+error_log /path/to/log;
+
+events {
+    debug_connection 192.168.1.1;
+    debug_connection 192.168.10.0/24;
+}
+</programlisting>
+</para>
+
+</section>
+
+</article>

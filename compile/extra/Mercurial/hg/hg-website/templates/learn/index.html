@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Learn Mercurial</h1>
+<p><em>Some links to resources for learning Mercurial, sorted by length</em></p>
+<ul>
+<li>
+<p><a href="/quickstart">Quick Start</a><br />
+  Get started using Mercurial and understanding its basic concepts.</p>
+</li>
+<li>
+<p><a href="http://mercurial.selenic.com/wiki/QuickStart">Quick Start from the wiki</a><br />
+  Learn the basic Mercurial commands. A bit more verbose than the short quick start above. </p>
+</li>
+<li>
+<p><a href="http://bitbucket.org/tortoisehg/stable/wiki/intro">TortoiseHG basics</a><br />
+  Easily use Mercurial integrated into the Windows Explorer. </p>
+</li>
+<li>
+<p><a href="/guide">Workflow guide</a><br />
+  Learn using Mercurial step by step in workflows. This guide skips the conceptual explanations to focus only on the practical usage. </p>
+</li>
+<li>
+<p><a href="http://hginit.com/">Hg Init: a Mercurial tutorial</a><br />
+  In this user-friendly, six-part tutorial, Joel Spolsky teaches you the key concepts of Mercurial. Also includes a section explaining the differences between SVN and Mercurial. </p>
+</li>
+<li>
+<p><a href="http://hgbook.red-bean.com/">Mercurial: The Definitive Guide</a> ("hgbook")<br />
+  The free book from Bryan O' Sullivan gives a detailed and easy to read introduction to Mercurial and the philosophy behind it. </p>
+</li>
+
+<li><p><em>Further resources<br />A wiki-page with links. If you've written a guide yourself, maybe for your team or for friends of yours, please add it! (It might be useful to have such a page in the wiki!)</em></p></li>
+</ul>	
+
+{% endblock %}
+{% block sidebar %}
+ {{ super() }}
+{% endblock %}

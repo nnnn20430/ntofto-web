@@ -1,0 +1,188 @@
+<?xml version="1.0"?>
+
+<!--
+  Copyright (C) 2006, 2007 Anton Yuzhaninov
+  Copyright (C) Nginx, Inc.
+  -->
+
+<!DOCTYPE module SYSTEM "../../../../dtd/module.dtd">
+
+<module name="Модуль ngx_mail_auth_http_module"
+        link="/ru/docs/mail/ngx_mail_auth_http_module.html"
+        lang="ru"
+        rev="5">
+
+<section id="directives" name="Директивы">
+
+<directive name="auth_http">
+<syntax><value>URL</value></syntax>
+<default/>
+<context>mail</context>
+<context>server</context>
+
+<para>
+Задаёт URL HTTP-сервера аутентификации.
+Протокол описан <link id="protocol">ниже</link>.
+</para>
+
+</directive>
+
+
+<directive name="auth_http_header">
+<syntax><value>заголовок</value> <value>значение</value></syntax>
+<default/>
+<context>mail</context>
+<context>server</context>
+
+<para>
+Добавляет указанный заголовок к запросам, посылаемым на сервер аутентификации.
+Заголовок можно использовать в качестве shared secret для проверки,
+что запрос поступил от nginx.
+Например:
+<example>
+auth_http_header X-Auth-Key "secret_string";
+</example>
+</para>
+
+</directive>
+
+
+<directive name="auth_http_timeout">
+<syntax><value>время</value></syntax>
+<default>60s</default>
+<context>mail</context>
+<context>server</context>
+
+<para>
+Задаёт таймаут общения с сервером аутентификации.
+</para>
+
+</directive>
+
+</section>
+
+
+<section id="protocol" name="Протокол">
+
+<para>
+Для общения с сервером аутентификации используется протокол HTTP.
+Данные в теле ответа игнорируются, информация передаётся только в заголовках.
+</para>
+
+<para>
+Примеры запросов и ответов:
+</para>
+
+<para>
+Запрос:
+<example>
+GET /auth HTTP/1.0
+Host: localhost
+Auth-Method: plain # plain/apop/cram-md5
+Auth-User: user
+Auth-Pass: password
+Auth-Protocol: imap # imap/pop3/smtp
+Auth-Login-Attempt: 1
+Client-IP: 192.0.2.42
+Client-Host: client.example.org
+</example>
+Хороший ответ:
+<example>
+HTTP/1.0 200 OK
+Auth-Status: OK
+Auth-Server: 198.51.100.1
+Auth-Port: 143
+</example>
+Плохой ответ:
+<example>
+HTTP/1.0 200 OK
+Auth-Status: Invalid login or password
+Auth-Wait: 3
+</example>
+</para>
+
+<para>
+Если заголовка <header>Auth-Wait</header> нет,
+то после выдачи ошибки соединение будет закрыто.
+В текущей реализации на каждую попытку аутентификации выделяется память,
+которая освобождается только при завершении сессии.
+Поэтому число неудачных попыток аутентификации в рамках одной сессии
+должно быть ограничено — после 10-20 попыток (номер попытки передаётся
+в заголовке <header>Auth-Login-Attempt</header>) сервер должен выдать ответ
+без заголовка <header>Auth-Wait</header>.
+</para>
+
+<para>
+При использовании APOP или CRAM-MD5 запрос и ответ будут выглядеть так:
+<example>
+GET /auth HTTP/1.0
+Host: localhost
+Auth-Method: apop
+Auth-User: user
+Auth-Salt: &lt;238188073.1163692009@mail.example.com&gt;
+Auth-Pass: auth_response
+Auth-Protocol: imap
+Auth-Login-Attempt: 1
+Client-IP: 192.0.2.42
+Client-Host: client.example.org
+</example>
+Хороший ответ:
+<example>
+HTTP/1.0 200 OK
+Auth-Status: OK
+Auth-Server: 198.51.100.1
+Auth-Port: 143
+Auth-Pass: plain-text-pass
+</example>
+</para>
+
+<para>
+Если в ответе есть заголовок <header>Auth-User</header>,
+то он переопределяет имя пользователя,
+используемое для аутентификации с бэкендом.
+</para>
+
+<para>
+Для SMTP в ответе дополнительно учитывается заголовок
+<header>Auth-Error-Code</header> — если он есть,
+то используется как код ответа в случае ошибки.
+Если его нет, то по умолчанию к <header>Auth-Status</header>
+будет добавлен код 535 5.7.0.
+</para>
+
+<para>
+Например, если от сервера аутентификации будет получен ответ:
+<example>
+HTTP/1.0 200 OK
+Auth-Status: Temporary server problem, try again later
+Auth-Error-Code: 451 4.3.0
+Auth-Wait: 3
+</example>
+то по SMTP клиенту будет выдана ошибка
+<example>
+451 4.3.0 Temporary server problem, try again later
+</example>
+</para>
+
+<para>
+Если при проксировании SMTP не требуется аутентификация,
+запрос будет выглядеть так:
+<example>
+GET /auth HTTP/1.0
+Host: localhost
+Auth-Method: none
+Auth-User: 
+Auth-Pass: 
+Auth-Protocol: smtp
+Auth-Login-Attempt: 1
+Client-IP: 192.0.2.42
+Client-Host: client.example.org
+Auth-SMTP-Helo: client.example.org
+Auth-SMTP-From: MAIL FROM: &lt;&gt;
+Auth-SMTP-To: RCPT TO: &lt;postmaster@mail.example.com&gt;
+</example>
+</para>
+
+</section>
+
+</module>

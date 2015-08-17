@@ -1,0 +1,102 @@
+<!--
+  Copyright (C) Igor Sysoev
+  Copyright (C) Nginx, Inc.
+  -->
+
+
+<!ELEMENT   module      (section+) >
+<!ATTLIST   module
+            name        CDATA #REQUIRED
+            link        CDATA #REQUIRED
+            lang        CDATA #REQUIRED
+            rev         CDATA #IMPLIED
+            translator  CDATA #IMPLIED
+            toc         (yes | no) "yes"
+>
+
+<!ELEMENT   section     (directive | para)+ >
+<!ATTLIST   section
+            id          ID #REQUIRED
+            name        CDATA #IMPLIED
+>
+
+<!ELEMENT   directive   (syntax+, default+, context+, appeared-in*, para+) >
+<!ATTLIST   directive
+            name        ID #REQUIRED
+>
+
+<!ELEMENT   syntax      (#PCDATA | literal | value)* >
+<!ATTLIST   syntax
+            block       (yes | no) "no"
+>
+
+<!ELEMENT   default     (#PCDATA)* >
+
+<!ELEMENT   context     (#PCDATA)* >
+
+<!ELEMENT   appeared-in (#PCDATA)* >
+
+<!ELEMENT   para        (#PCDATA | c-def | c-func | command |
+                         emphasis | example | header | http-status | link |
+                         list | literal | note | path | value | var |
+                         mainline_version | stable_version | commercial_version)* >
+
+<!ELEMENT   c-def       (#PCDATA)* >
+
+<!ELEMENT   c-func      (#PCDATA)* >
+
+<!ELEMENT   command     (#PCDATA)* >
+
+<!ELEMENT   emphasis    (#PCDATA | value)* >
+
+<!ELEMENT   example     (#PCDATA | value | emphasis)* >
+
+<!ELEMENT   header      (#PCDATA | value)* >
+
+<!ELEMENT   http-status EMPTY >
+<!ATTLIST   http-status
+            code        CDATA #REQUIRED
+            text        CDATA #IMPLIED
+>
+
+<!ELEMENT   link        (#PCDATA)* >
+<!ATTLIST   link
+            doc         CDATA #IMPLIED
+            id          CDATA #IMPLIED
+            url         CDATA #IMPLIED
+>
+
+<!ELEMENT   list        (listitem+ | (tag-name | tag-desc)+) >
+<!ATTLIST   list
+            type        (bullet | enum | tag) #REQUIRED
+            compact     (yes | no) "yes"
+>
+
+<!ELEMENT   listitem    ANY >
+<!ATTLIST   listitem
+            id          ID #IMPLIED
+>
+
+<!ELEMENT   tag-name    ANY >
+<!ATTLIST   tag-name
+            id          ID #IMPLIED
+>
+
+<!ELEMENT   tag-desc    ANY >
+
+<!ELEMENT   literal     (#PCDATA | value)* >
+
+<!ELEMENT   note        ANY >
+
+<!ELEMENT   path        (#PCDATA)* >
+
+<!ELEMENT   value       (#PCDATA)* >
+
+<!ELEMENT   var         (#PCDATA)* >
+
+<!ENTITY    nbsp        "&#xA0;" >
+<!ENTITY    mdash       "&nbsp;- " >
+
+<!ELEMENT   mainline_version    EMPTY >
+<!ELEMENT   stable_version      EMPTY >
+<!ELEMENT   commercial_version  (#PCDATA) >

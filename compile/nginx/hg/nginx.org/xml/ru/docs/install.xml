@@ -1,0 +1,59 @@
+<!--
+  Copyright (C) Igor Sysoev
+  Copyright (C) Nginx, Inc.
+  -->
+
+<!DOCTYPE article SYSTEM "../../../dtd/article.dtd">
+
+<article name="Установка nginx"
+         link="/ru/docs/install.html"
+         lang="ru"
+         rev="2"
+         toc="no">
+
+<section>
+
+<para>
+nginx устанавливается по-разному в зависимости от операционной системы.
+</para>
+
+</section>
+
+
+<section id="linux" name="Установка на Linux">
+
+<para>
+Для установки nginx на Linux могут быть использованы
+<link doc="../linux_packages.xml">пакеты</link> с nginx.org.
+</para>
+
+</section>
+
+
+<section id="freebsd" name="Установка на FreeBSD">
+
+<para>
+На FreeBSD можно установить nginx либо из
+<link url="http://www.freebsd.org/doc/handbook/pkgng-intro.html">пакетов</link>,
+либо с помощью системы
+<link url="http://www.freebsd.org/doc/handbook/ports-using.html">портов</link>.
+Система портов даёт большую гибкость, позволяя выбирать из широкого
+набора настроек.
+Порт скомпилирует nginx с выбранными опциями и установит.
+</para>
+
+</section>
+
+
+<section id="source_install" name="Сборка из исходных файлов">
+
+<para>
+Если необходима специфическая функциональность, недоступная из пакетов или
+портов, можно скомпилировать nginx из исходного кода.
+Будучи наиболее гибким, этот подход может быть сложным для начинающего.
+<link doc="configure.xml"/> освещает этот вопрос более подробно.
+</para>
+
+</section>
+
+</article>

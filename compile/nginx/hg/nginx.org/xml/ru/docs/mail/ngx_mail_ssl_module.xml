@@ -1,0 +1,385 @@
+<?xml version="1.0"?>
+
+<!--
+  Copyright (C) 2006, 2007 Anton Yuzhaninov
+  Copyright (C) Nginx, Inc.
+  -->
+
+<!DOCTYPE module SYSTEM "../../../../dtd/module.dtd">
+
+<module name="Модуль ngx_mail_ssl_module"
+        link="/ru/docs/mail/ngx_mail_ssl_module.html"
+        lang="ru"
+        rev="4">
+
+<section id="summary">
+
+<para>
+Модуль <literal>ngx_mail_ssl_module</literal> обеспечивает работу
+почтового прокси-сервера по протоколу SSL/TLS.
+</para>
+
+<para>
+По умолчанию этот модуль не собирается, его сборку необходимо
+разрешить с помощью конфигурационного параметра
+<literal>--with-mail_ssl_module</literal>.
+<note>
+Для сборки и работы этого модуля нужна библиотека
+<link url="http://www.openssl.org">OpenSSL</link>.
+</note>
+</para>
+
+</section>
+
+
+<section id="directives" name="Директивы">
+
+<directive name="ssl">
+<syntax><literal>on</literal> | <literal>off</literal></syntax>
+<default>off</default>
+<context>mail</context>
+<context>server</context>
+
+<para>
+Включает протокол SSL/TLS для данного сервера.
+</para>
+
+</directive>
+
+
+<directive name="ssl_certificate">
+<syntax><value>файл</value></syntax>
+<default/>
+<context>mail</context>
+<context>server</context>
+
+<para>
+Указывает файл с сертификатом в формате PEM
+для данного сервера.
+Если вместе с основным сертификатом нужно указать промежуточные,
+то они должны находиться в этом же файле в следующем порядке — сначала
+основной сертификат, а затем промежуточные.
+В этом же файле может находиться секретный ключ в формате PEM.
+</para>
+
+</directive>
+
+
+<directive name="ssl_certificate_key">
+<syntax><value>файл</value></syntax>
+<default/>
+<context>mail</context>
+<context>server</context>
+
+<para>
+Указывает файл с секретным ключом в формате PEM
+для данного сервера.
+</para>
+
+</directive>
+
+
+<directive name="ssl_ciphers">
+<syntax><value>шифры</value></syntax>
+<default>HIGH:!aNULL:!MD5</default>
+<context>mail</context>
+<context>server</context>
+
+<para>
+Описывает разрешённые шифры.
+Шифры задаются в формате, поддерживаемом библиотекой
+OpenSSL, например:
+<example>
+ssl_ciphers ALL:!aNULL:!EXPORT56:RC4+RSA:+HIGH:+MEDIUM:+LOW:+SSLv2:+EXP;
+</example>
+</para>
+
+<para>
+Полный список можно посмотреть с помощью команды
+“<command>openssl ciphers</command>”.
+</para>
+
+<para>
+<note>
+В предыдущих версиях nginx по умолчанию использовались
+<link doc="../http/configuring_https_servers.xml" id="compatibility">другие</link>
+шифры.
+</note>
+</para>
+
+</directive>
+
+
+<directive name="ssl_dhparam">
+<syntax><value>файл</value></syntax>
+<default/>
+<context>mail</context>
+<context>server</context>
+<appeared-in>0.7.2</appeared-in>
+
+<para>
+Указывает <value>файл</value> с параметрами для шифров с обменом EDH-ключами.
+</para>
+
+</directive>
+
+
+<directive name="ssl_ecdh_curve">
+<syntax><value>кривая</value></syntax>
+<default>prime256v1</default>
+<context>mail</context>
+<context>server</context>
+<appeared-in>1.1.0</appeared-in>
+<appeared-in>1.0.6</appeared-in>
+
+<para>
+Задаёт кривую для ECDHE-шифров.
+</para>
+
+</directive>
+
+
+<directive name="ssl_password_file">
+<syntax><value>файл</value></syntax>
+<default/>
+<context>mail</context>
+<context>server</context>
+<appeared-in>1.7.3</appeared-in>
+
+<para>
+Задаёт <value>файл</value> с паролями от
+<link id="ssl_certificate_key">секретных ключей</link>,
+где каждый пароль указан на отдельной строке.
+Пароли применяются по очереди в момент загрузки ключа.
+</para>
+
+<para>
+Пример:
+<example>
+mail {
+    ssl_password_file /etc/keys/global.pass;
+    ...
+
+    server {
+        server_name mail1.example.com;
+        ssl_certificate_key /etc/keys/first.key;
+    }
+
+    server {
+        server_name mail2.example.com;
+
+        # вместо файла можно указать именованный канал
+        ssl_password_file /etc/keys/fifo;
+        ssl_certificate_key /etc/keys/second.key;
+    }
+}
+</example>
+</para>
+
+</directive>
+
+
+<directive name="ssl_prefer_server_ciphers">
+<syntax><literal>on</literal> | <literal>off</literal></syntax>
+<default>off</default>
+<context>mail</context>
+<context>server</context>
+
+<para>
+Указывает, чтобы при использовании протоколов SSLv3 и TLS
+серверные шифры были более приоритетны, чем клиентские.
+</para>
+
+</directive>
+
+
+<directive name="ssl_protocols">
+<syntax>
+    [<literal>SSLv2</literal>]
+    [<literal>SSLv3</literal>]
+    [<literal>TLSv1</literal>]
+    [<literal>TLSv1.1</literal>]
+    [<literal>TLSv1.2</literal>]</syntax>
+<default>SSLv3 TLSv1 TLSv1.1 TLSv1.2</default>
+<context>mail</context>
+<context>server</context>
+
+<para>
+Разрешает указанные протоколы.
+Параметры <literal>TLSv1.1</literal> и <literal>TLSv1.2</literal> работают
+только при использовании библиотеки OpenSSL версии 1.0.1 и выше.
+<note>
+Параметры <literal>TLSv1.1</literal> и <literal>TLSv1.2</literal> поддерживаются
+только начиная с версий 1.1.13 и 1.0.12,
+поэтому при использовании OpenSSL версии 1.0.1
+и выше на старых версиях nginx эти протоколы работать будут, однако их нельзя
+будет отключить.
+</note>
+</para>
+
+</directive>
+
+
+<directive name="ssl_session_cache">
+<syntax>
+    <literal>off</literal> |
+    <literal>none</literal> |
+    [<literal>builtin</literal>[:<value>размер</value>]]
+    [<literal>shared</literal>:<value>название</value>:<value>размер</value>]</syntax>
+<default>none</default>
+<context>mail</context>
+<context>server</context>
+
+<para>
+Задаёт тип и размеры кэшей для хранения параметров сессий.
+Тип кэша может быть следующим:
+<list type="tag" compact="no">
+
+<tag-name><literal>off</literal></tag-name>
+<tag-desc>
+жёсткое запрещение использования кэша сессий:
+nginx явно говорит клиенту, что сессии не могут использоваться повторно.
+</tag-desc>
+
+<tag-name><literal>none</literal></tag-name>
+<tag-desc>
+мягкое запрещение использования кэша сессий:
+nginx говорит клиенту, что сессии могут использоваться повторно, но
+на самом деле не хранит параметры сессии в кэше.
+</tag-desc>
+
+<tag-name><literal>builtin</literal></tag-name>
+<tag-desc>
+встроенный в OpenSSL кэш, используется в рамках только одного рабочего процесса.
+Размер кэша задаётся в сессиях.
+Если размер не задан, то он равен 20480 сессиям.
+Использование встроенного кэша может вести к фрагментации памяти.
+</tag-desc>
+
+<tag-name><literal>shared</literal></tag-name>
+<tag-desc>
+кэш, разделяемый между всеми рабочими процессами.
+Размер кэша задаётся в байтах, в 1 мегабайт может поместиться
+около 4000 сессий.
+У каждого разделяемого кэша должно быть произвольное название.
+Кэш с одинаковым названием может использоваться в нескольких
+серверах.
+</tag-desc>
+
+</list>
+</para>
+
+<para>
+Можно использовать одновременно оба типа кэша, например:
+<example>
+ssl_session_cache builtin:1000 shared:SSL:10m;
+</example>
+однако использование только разделяемого кэша без встроенного должно
+быть более эффективным.
+</para>
+
+</directive>
+
+
+<directive name="ssl_session_ticket_key">
+<syntax><value>файл</value></syntax>
+<default/>
+<context>mail</context>
+<context>server</context>
+<appeared-in>1.5.7</appeared-in>
+
+<para>
+Задаёт <value>файл</value> с секретным ключом, применяемым при шифровании и
+расшифровании TLS session tickets.
+Директива необходима, если один и тот же ключ нужно использовать
+на нескольких серверах.
+По умолчанию используется случайно сгенерированный ключ.
+</para>
+
+<para>
+Если указано несколько ключей, то только первый ключ
+используется для шифрования TLS session tickets.
+Это позволяет настроить ротацию ключей, например:
+<example>
+ssl_session_ticket_key current.key;
+ssl_session_ticket_key previous.key;
+</example>
+</para>
+
+<para>
+<value>Файл</value> должен содержать 48 байт случайных данных и может быть
+создан следующей командой:
+<example>
+openssl rand 48 > ticket.key
+</example>
+</para>
+
+</directive>
+
+
+<directive name="ssl_session_tickets">
+<syntax><literal>on</literal> | <literal>off</literal></syntax>
+<default>on</default>
+<context>mail</context>
+<context>server</context>
+<appeared-in>1.5.9</appeared-in>
+
+<para>
+Разрешает или запрещает возобновление сессий при помощи
+<link url="http://tools.ietf.org/html/rfc5077">TLS session tickets</link>.
+</para>
+
+</directive>
+
+
+<directive name="ssl_session_timeout">
+<syntax><value>время</value></syntax>
+<default>5m</default>
+<context>mail</context>
+<context>server</context>
+
+<para>
+Задаёт время, в течение которого клиент может повторно
+использовать параметры сессии, хранящейся в кэше.
+</para>
+
+</directive>
+
+
+<directive name="starttls">
+<syntax>
+  <literal>on</literal> |
+  <literal>off</literal> |
+  <literal>only</literal></syntax>
+<default>off</default>
+<context>mail</context>
+<context>server</context>
+
+<para>
+<list type="tag">
+
+<tag-name><literal>on</literal></tag-name>
+<tag-desc>
+разрешить использование команд <literal>STLS</literal> для POP3
+и <literal>STARTTLS</literal> для IMAP;
+</tag-desc>
+
+<tag-name><literal>off</literal></tag-name>
+<tag-desc>
+запретить использование команд <literal>STLS</literal>
+и <literal>STARTTLS</literal>;
+</tag-desc>
+
+<tag-name><literal>only</literal></tag-name>
+<tag-desc>
+требовать предварительного перехода на TLS.
+</tag-desc>
+
+</list>
+</para>
+
+</directive>
+
+</section>
+
+</module>

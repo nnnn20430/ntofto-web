@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+
+<div id="mainpage"></div>
+
+<SCRIPT src="javascripts/pidcrypt.js"></SCRIPT>
+<SCRIPT src="javascripts/pidcrypt_util.js"></SCRIPT>
+<SCRIPT src="javascripts/asn1.js"></SCRIPT><!--needed for parsing decrypted rsa certificate-->
+<SCRIPT src="javascripts/jsbn.js"></SCRIPT><!--needed for rsa math operations-->
+<SCRIPT src="javascripts/rng.js"></SCRIPT><!--needed for rsa key generation-->
+<SCRIPT src="javascripts/prng4.js"></SCRIPT><!--needed for rsa key generation-->
+<SCRIPT src="javascripts/rsa.js"></SCRIPT><!--needed for rsa en-/decryption-->
+<SCRIPT src="javascripts/sha512.js"></SCRIPT>
+<script src="javascripts/jsencrypt.js"></script>
+<script src="./jquery-2.1.0.js"></script>
+<script src="./compute.js"></script>
+
+<script>
+
+var usernameBackup = '';
+var keyBackup = '';
+var intervalID = '';
+getPubkeyandMakeNewAsyncCallback(function(){pageInit()});
+
+
+function pageInit(){
+  checkLoginCookieAndResume();
+  loadLoginPage();
+}
+
+//to find out how much data key can encrypt you devide keylenght whit 8 and then minus 42 so 1024/8 - 42 = 86 bytes
+function generatekeys()
+{
+ var keySize = 2048;
+ crypt = new JSEncrypt({default_key_size: keySize});
+ var async = false;
+ var dt = new Date();
+ var time = -(dt.getTime());
+ crypt.getKey();
+ dt = new Date();
+ time += (dt.getTime());
+ return [crypt.getPrivateKey(), crypt.getPublicKey()];
+}
+
+
+function setCookie(cname,cvalue,exdays)
+{
+if(exdays != null)
+{
+var d = new Date();
+d.setTime(d.getTime()+(exdays*24*60*60*1000));
+var expires = "expires="+d.toGMTString()+"; ";
+}
+else
+{
+var expires = ""
+}
+document.cookie = cname + "=" + cvalue + "; " + expires + "path=/";
+}
+
+function getCookie(cname)
+{
+var name = cname + "=";
+var ca = document.cookie.split(';');
+for(var i=0; i<ca.length; i++) 
+  {
+  var c = ca[i].trim();
+  if (c.indexOf(name)==0) return c.substring(name.length,c.length);
+}
+return "";
+}
+
+function checkCookie1()
+{
+var user=getCookie("username");
+if (user!="")
+  {
+  alert("Welcome again " + user);
+  }
+else 
+  {
+  user = prompt("Please enter your name:","");
+  if (user!="" && user!=null)
+    {
+    setCookie("username",user,365);
+    }
+  }
+}
+
+function checkLoginCookieAndResume()
+{
+var cookie=getCookie("LoggedIn");
+if (cookie!="")
+  {
+   window.loginStatus = true;
+   function tryToResumeSession(){
+    $.get("./compute.php?AuthenticatedPageRequest=logedinpage&username=" + encodeURIComponent(localStorage.getItem('username')) + "&loginSessionKey=" + encodeURIComponent(compute('encrypt', localStorage.getItem('loginSessionKey'), window.server_public_key)), function(response){
+     if(response == 'Wrong key'){
+      localStorage.removeItem('loginSessionKey');
+      localStorage.removeItem('username');
+      localStorage.removeItem('AuthenticationLevel');
+      delCookie('LoggedIn');
+      alert('Error resuming session: Wrong key');
+      $("#mainpage").load("./compute.php?pageRequest=loginpage", loadedloginpage);
+     }else{
+      $("#mainpage").html(response);
+      loadedlogedinpage();
+      //alert("Welcome again");
+     }
+    });
+   }
+   getPubkeyandMakeNewAsyncCallback(tryToResumeSession);
+  }
+else 
+  {
+   localStorage.removeItem('loginSessionKey');
+   localStorage.removeItem('username');
+   localStorage.removeItem('AuthenticationLevel');
+  }
+}
+
+// || = or
+// && = and
+
+function checkLoginKeyWhitServer(){
+ var requestdata = '&Request=CheckKey';
+ AuthRequest(localStorage.getItem('username'), localStorage.getItem('loginSessionKey'), requestdata, function(response){if(response=='true'||response==''){/*Do Nothing*/}else{delCookie('LoggedIn');}});
+}
+function checkLoginCookie(requestLogOutSilent)
+{
+var cookie=getCookie("LoggedIn");
+if (cookie=="")
+  {
+   clearInterval(intervalID);
+   requestLogOutSilent(function(){alert('Your login session has expired.\nOr logged in from another location.');});
+  }
+else 
+  {
+   usernameBackup=localStorage.getItem('username');
+   keyBackup=localStorage.getItem('loginSessionKey');
+  }
+}
+
+function delCookie(cname)
+{
+ document.cookie = cname + "=hi; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/";
+}
+
+function loadScript(url, callback)
+{
+    // Adding the script tag to the head as suggested before
+    var head = document.getElementsByTagName('head')[0];
+    var script = document.createElement('script');
+    script.type = 'text/javascript';
+    script.src = url;
+
+    // Then bind the event to the callback function.
+    // There are several events for cross browser compatibility.
+    script.onreadystatechange = callback;
+    script.onload = callback;
+
+    // Fire the loading
+    head.appendChild(script);
+}
+
+/*
+// similar behavior as an HTTP redirect
+window.location.replace("http://stackoverflow.com");
+
+// similar behavior as clicking on a link
+window.location.href = "http://stackoverflow.com";
+
+
+location = {
+  host: "stackoverflow.com",
+  hostname: "stackoverflow.com",
+  href: "http://stackoverflow.com/questions/2300771/jquery-domain-get-url",
+  pathname: "/questions/2300771/jquery-domain-get-url",
+  port: "",
+  protocol: "http:"
+}
+so:
+
+location.host 
+would be the domain, in this case stackoverflow.com. For the complete first part of the url, you can use:
+
+location.protocol + "//" + location.host
+which in this case would be http://stackoverflow.com
+*/
+
+function solutionforchromecauzeitsucks( url, callback ) {
+var succesresponce = ""
+		jQuery.ajax({
+			url: url,
+			type: "GET",
+			async: false,
+			dataType: "html",
+			success: function(response){
+			succesresponce = response;
+			}
+
+	});
+setTimeout(function(){callback();}, 1000);
+return succesresponce;
+};
+
+
+function AuthRequest(username, key, datatosend, callback){
+ getPubkeyandMakeNew();
+ var serverresponse = '';
+ $.ajax({
+  url: './compute.php',
+  processData: false,
+  type: 'post',
+  async: true,
+//  dataType: 'text',
+//  contentType: 'multipart/form-data',
+//  mimeType: 'multipart/form-data',
+  data: 'AuthenticatedRequest=true' + '&username=' + encodeURIComponent(username) + "&loginSessionKey=" + encodeURIComponent(compute('encrypt', key, window.server_public_key)) + datatosend,
+  success: function(response){
+   serverresponse = response;
+   if(callback != null){
+    if(typeof numOfErrors == 'undefined'){numOfErrors=0}
+    if(serverresponse.search("Decryption error") != -1 || serverresponse.search("Wrong key") != -1){numOfErrors++;}else{numOfErrors=0;}
+    if(numOfErrors < 1 || numOfErrors > 5){
+     callback(serverresponse);
+    }else if(numOfErrors <= 5){
+     AuthRequest(username, key, datatosend, callback);
+    }
+   }
+  },
+ });
+}
+
+function AuthRequestForm(username, key, datatosend, callback, headercallback){/* datatosend is a object-array to set it use {'key1': 'value1', 'key2': 'value2'} */
+ getPubkeyandMakeNew();
+ var serverresponse = '';
+ 
+ var formData = new FormData();
+ formData.append('AuthenticatedRequest', 'true');
+ formData.append('username', username);
+ formData.append("loginSessionKey", compute('encrypt', key, window.server_public_key)); 
+ for (var prop in datatosend) {
+  if (datatosend.hasOwnProperty(prop)) { 
+   // or if (Object.prototype.hasOwnProperty.call(obj,prop)) for safety...
+   formData.append(prop, datatosend[prop]);
+  }
+ }
+ 
+
+ var request = new XMLHttpRequest();
+ request.open("POST", "./compute.php", true);
+ request.overrideMimeType('text\/plain; charset=x-user-defined');
+// request.setRequestHeader('connection', '');
+// request.upload.addEventListener('progress', uploadProgress, false);
+ request.addEventListener('load', function(){returnReponse(request.responseText);}, false);
+ request.addEventListener('error', function(){returnReponse('error');}, false);
+ request.addEventListener('abort', function(){returnReponse('abort');}, false);
+ request.send(formData);
+ 
+ function returnReponse(response){
+  serverresponse = response;
+  if(typeof numOfErrors == 'undefined'){numOfErrors=0}
+  if(serverresponse.search("Decryption error") != -1 || serverresponse.search("Wrong key") != -1){numOfErrors++;}else{numOfErrors=0;}
+  if(numOfErrors < 1 || numOfErrors > 5){
+   if(headercallback != null){
+    headercallback(headerStringToObject(request.getAllResponseHeaders()));
+    /*returns object to get value of header you want just do obj['header name']*/
+   }
+   if(callback != null){
+    callback(serverresponse);
+   }
+  }else if(numOfErrors <= 5){
+   AuthRequestForm(username, key, datatosend, callback, headercallback)
+  }
+ }
+}
+
+Array.prototype.clean = function(deleteValue) {
+  for (var i = 0; i < this.length; i++) {
+    if (this[i] == deleteValue) {         
+      this.splice(i, 1);
+      i--;
+    }
+  }
+  return this;
+};
+
+function headerStringToObject(string){
+ string = string.replace(/(.*)(,+)(.*)/g, "$1" + "!CommaChar!" + "$3");
+ var properties = string.split("\n").clean("");
+ var obj = {};
+ properties.forEach(function(property) {
+     var tup = property.split(':');
+     tup[0] = tup[0].replace(/^[.\s"']+|[.\s"']+$/g, "");
+     tup[1] = tup[1].replace(/^[.\s"']+|[.\s"']+$/g, "");
+     tup[1] = tup[1].replace("!CommaChar!", ",");
+     var isnum = /^\d+$/.test(tup[1]);
+     if(isnum){tup[1] = +tup[1]}
+     obj[tup[0]] = tup[1];
+ });
+ return obj;
+}
+
+/*
+var obj = stringToObject('hi: hello, number: 1, 1: number, "string of text": "works too", "hi":"hello world"');
+is same as
+var obj = {hi: 'hello', number: 1, 1: 'number', "string of text": "works too", "hi":"hello world"};
+*/
+function stringToObject(string){
+ var previusString = "";
+ while(previusString != string){
+  previusString = string;
+  string = string.replace(/(,\s*"[^"]*)(,+)([^"]*")/g, "$1" + "!CommaChar!" + "$3");
+  string = string.replace(/("[^"]*)(,+)([^"]*"\s*,)/g, "$1" + "!CommaChar!" + "$3");
+ }
+ var properties = string.split(',');
+ var obj = {};
+ properties.forEach(function(property) {
+     var tup = property.split(':');
+     tup[0] = tup[0].replace(/^[.\s"']+|[.\s"']+$/g, "");
+     tup[1] = tup[1].replace(/^[.\s"']+|[.\s"']+$/g, "");
+     tup[1] = tup[1].replace("!CommaChar!", ",");
+     var isnum = /^\d+$/.test(tup[1]);
+     if(isnum){tup[1] = +tup[1]}
+     obj[tup[0]] = tup[1];
+ });
+ return obj;
+}
+
+function loadLoginPage(){
+ if(!window.loginStatus){
+  $("#mainpage").load("./compute.php?pageRequest=loginpage", loadedloginpage);
+ }
+}
+function loadedloginpage(){
+ document.getElementById("regbutton").onclick = submitregForm;
+ document.getElementById("loginbutton").onclick = submitloginForm;
+// document.getElementsByName("regbuttonname")[0].onclick = submitregForm;
+
+ function submitregForm()
+ {
+  checkIfServerWantsMakeNewKey();
+  document.getElementById('registerresponse').innerHTML = solutionforchromecauzeitsucks("./compute.php?pageRequest=Proccesingpage", submitregForm2);
+  function submitregForm2(){
+  getPubkeyandMakeNew();
+  var datatosend = 'passreg=' + encodeURIComponent(compute('encrypt', window.document.reginput.passreg.value, window.server_public_key)) + '&usernamereg=' + encodeURIComponent(window.document.reginput.usernamereg.value);
+     $.ajax({
+         url: './compute.php',
+         processData: true,
+         type: 'post',
+         async: false,
+         data: datatosend + '&registerRequest=true',
+         success: function(response)
+         {
+          $("#registerresponse").html(response);
+         },
+     });
+  }
+ }
+ function submitloginForm()
+ {
+  checkIfServerWantsMakeNewKey();
+  document.getElementById('loginresponse').innerHTML = solutionforchromecauzeitsucks("./compute.php?pageRequest=Proccesingpage", submitloginForm2);
+  function submitloginForm2(){
+  var clientkeys = generatekeys()
+  getPubkeyandMakeNew();
+  var datatosend = 'passlogin=' + encodeURIComponent(compute('encrypt', window.document.logininput.passlogin.value, window.server_public_key)) + '&usernamelogin=' + encodeURIComponent(window.document.logininput.usernamelogin.value);
+     $.ajax({
+         url: './compute.php',
+         processData: true,
+         type: 'post',
+         async: false,
+         data: datatosend + '&loginRequest=true' + '&clientkey=' + encodeURIComponent(clientkeys[1]),
+         success: function(response)
+         {
+          response = response.split(',');
+          $("#loginresponse").html(response[0]);
+          if(response[0] == "<h4>Success: correct pass</h4>")
+          {
+           localStorage.setItem('loginSessionKey', compute('decrypt', response[1], clientkeys[0]));
+           localStorage.setItem('username', window.document.logininput.usernamelogin.value);
+           localStorage.setItem('AuthenticationLevel', response[2]);
+           setCookie('LoggedIn','true',1);
+           function reloadmainpageforlogin(){loadedlogedinpage();window.location.replace(document.URL);}
+           checkIfServerWantsMakeNewKey();
+           $("#mainpage").load("./compute.php?AuthenticatedPageRequest=logedinpage&username=" + encodeURIComponent(localStorage.getItem('username')) + "&loginSessionKey=" + encodeURIComponent(compute('encrypt', localStorage.getItem('loginSessionKey'), window.server_public_key)), loadedlogedinpage);
+          }
+         },
+     });
+  }
+ }
+}
+function loadedlogedinpage(){
+ checkLoginKeyWhitServer();
+ intervalID = window.setInterval(function(){checkLoginKeyWhitServer();}, 10000);
+ intervalID = window.setInterval(function(){checkLoginCookie(requestLogOutSilent);}, 1000);
+ function requestLogOutSilent(callback){
+  getPubkeyandMakeNew();
+  $.ajax({
+   url: './compute.php',
+   processData: true,
+   type: 'post',
+   async: true,
+   data: 'logoutRequest=true' + '&loginSessionKey=' + encodeURIComponent(compute('encrypt', keyBackup, window.server_public_key)) + '&username=' + encodeURIComponent(usernameBackup),
+   success: function(response){
+    localStorage.removeItem('loginSessionKey');
+    localStorage.removeItem('username');
+    localStorage.removeItem('AuthenticationLevel');
+    delCookie('LoggedIn');
+    $("#mainpage").load("./compute.php?pageRequest=loginpage", function(){callback();console.log(usernameBackup+':'+keyBackup);loadedloginpage();window.location.replace(document.URL);});
+   },
+  });
+ }
+ document.getElementById("logout").onclick = requestLogOut;
+ function requestLogOut(){
+  getPubkeyandMakeNew();
+  $.ajax({
+   url: './compute.php',
+   processData: true,
+   type: 'post',
+   async: true,
+   data: 'logoutRequest=true' + '&loginSessionKey=' + encodeURIComponent(compute('encrypt', localStorage.getItem('loginSessionKey'), window.server_public_key)) + '&username=' + encodeURIComponent(localStorage.getItem('username')),
+   success: function(response){alert(response);},
+  });
+  clearInterval(intervalID);
+  localStorage.removeItem('loginSessionKey');
+  localStorage.removeItem('username');
+  localStorage.removeItem('AuthenticationLevel');
+  delCookie('LoggedIn');
+  $("#mainpage").load("./compute.php?pageRequest=loginpage", function(){loadedloginpage();window.location.replace(document.URL);});
+ }
+ if(localStorage.getItem('AuthenticationLevel') == '1'){AuthenticationLevel1Functions();}
+ function AuthenticationLevel1Functions(){
+  // did not realy need this
+ }
+}
+</script>

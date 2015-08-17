@@ -1,0 +1,72 @@
+<!--
+  Copyright (C) Igor Sysoev
+  Copyright (C) Nginx, Inc.
+  -->
+
+X:stylesheet {
+
+X:template = "img" { <img src="{@href}"> !!; </img> }
+
+X:template = "origin" {
+    <a>
+    X:attribute "href" {
+        !root(path = "$ORIGIN")
+        !{ concat(substring-before($ORIGIN, '.xml'), '.html') }
+    }
+    !!;
+    </a>
+}
+
+X:template = "link[@url]" {
+    <a href="{@url}">
+    X:if "count(node()) != 0" { !!; } else { !{@url} }
+    </a>
+}
+
+X:template = "link[@id and not(@doc)]" {
+    <a href="#{@id}">
+    X:if "count(node()) != 0" { !!; } else { !{@id} }
+    </a>
+}
+
+X:template = "link[@doc and not(@id)]" {
+    <a href="{substring-before(@doc, '.xml')}.html">
+    X:if "count(node()) != 0" {
+        !!;
+    } else {
+        !{ document(@doc)/article/@name | document(@doc)/module/@name }
+    }
+    </a>
+}
+
+X:template = "link[@id and @doc]" {
+    <a href="{substring-before(@doc, '.xml')}.html#{@id}">
+    X:if "count(node()) != 0" { !!; } else { !{@id} }
+    </a>
+}
+
+X:template = "links" {
+    X:for-each "link", X:sort "@id" {
+        <a href="{substring-before(@doc, '.xml')}.html#{@id}">!{@id}</a>
+        X:if "count(../link[@id = current()/@id]) > 1" {
+            X:text{ (}
+            !{substring-before(substring-after(@doc, '/'), '.xml')}
+            X:text{)}
+        }
+        <br/>
+    }
+}
+
+X:template = "varlinks" {
+    X:for-each "link", X:sort "@id" {
+        <a href="{substring-before(@doc, '.xml')}.html#{@id}">!!;</a>
+        X:if "count(../link[@id = current()/@id and @doc != current()/@doc]) > 0" {
+            X:text{ (}
+            !{substring-before(substring-after(@doc, '/'), '.xml')}
+            X:text{)}
+        }
+        <br/>
+    }
+}
+
+}

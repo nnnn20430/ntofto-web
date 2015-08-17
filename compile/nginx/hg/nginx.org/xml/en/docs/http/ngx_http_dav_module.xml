@@ -1,0 +1,178 @@
+<?xml version="1.0"?>
+
+<!--
+  Copyright (C) Igor Sysoev
+  Copyright (C) Nginx, Inc.
+  -->
+
+<!DOCTYPE module SYSTEM "../../../../dtd/module.dtd">
+
+<module name="Module ngx_http_dav_module"
+        link="/en/docs/http/ngx_http_dav_module.html"
+        lang="en"
+        rev="2">
+
+<section id="summary">
+
+<para>
+The <literal>ngx_http_dav_module</literal> module is intended for file
+management automation via the WebDAV protocol.
+The module processes HTTP and WebDAV
+methods PUT, DELETE, MKCOL, COPY, and MOVE.
+</para>
+
+<para>
+This module is not built by default, it should be enabled with the
+<literal>--with-http_dav_module</literal>
+configuration parameter.
+</para>
+
+<para>
+<note>
+WebDAV clients that require additional WebDAV methods to operate
+will not work with this module.
+</note>
+</para>
+
+</section>
+
+
+<section id="example" name="Example Configuration">
+
+<para>
+<example>
+location / {
+    root                  /data/www;
+
+    client_body_temp_path /data/client_temp;
+
+    dav_methods PUT DELETE MKCOL COPY MOVE;
+
+    create_full_put_path  on;
+    dav_access            group:rw  all:r;
+
+    limit_except GET {
+        allow 192.168.1.0/32;
+        deny  all;
+    }
+}
+</example>
+</para>
+
+</section>
+
+
+<section id="directives" name="Directives">
+
+<directive name="dav_access">
+<syntax><value>users</value>:<value>permissions</value> ...</syntax>
+<default>user:rw</default>
+<context>http</context>
+<context>server</context>
+<context>location</context>
+
+<para>
+Sets access permissions for newly created files and directories, e.g.:
+<example>
+dav_access user:rw group:rw all:r;
+</example>
+</para>
+
+<para>
+If any <literal>group</literal> or <literal>all</literal> access permissions
+are specified then <literal>user</literal> permissions may be omitted:
+<example>
+dav_access group:rw all:r;
+</example>
+</para>
+
+</directive>
+
+
+<directive name="dav_methods">
+<syntax>
+    <literal>off</literal> | <value>method</value> ...</syntax>
+<default>off</default>
+<context>http</context>
+<context>server</context>
+<context>location</context>
+
+<para>
+Allows the specified HTTP and WebDAV methods.
+The parameter <literal>off</literal> denies all methods processed
+by this module.
+The following methods are supported:
+<literal>PUT</literal>, <literal>DELETE</literal>, <literal>MKCOL</literal>,
+<literal>COPY</literal>, and <literal>MOVE</literal>.
+</para>
+
+<para>
+A file uploaded with the PUT method is first written to a temporary file,
+and then the file is renamed.
+Starting from version 0.8.9, temporary files and the persistent store
+can be put on different file systems.
+However, be aware that in this case a file is copied
+across two file systems instead of the cheap renaming operation.
+It is thus recommended that for any given location both saved files and a
+directory holding temporary files, set by the
+<link doc="ngx_http_core_module.xml" id="client_body_temp_path"/>
+directive, are put on the same file system.
+</para>
+
+<para>
+When creating a file with the PUT method, it is possible to specify
+the modification date by passing it in the <header>Date</header>
+header field.
+</para>
+
+</directive>
+
+
+<directive name="create_full_put_path">
+<syntax><literal>on</literal> | <literal>off</literal></syntax>
+<default>off</default>
+<context>http</context>
+<context>server</context>
+<context>location</context>
+
+<para>
+The WebDAV specification only allows creating files in already
+existing directories.
+This directive allows creating all needed intermediate directories.
+</para>
+
+</directive>
+
+
+<directive name="min_delete_depth">
+<syntax><value>number</value></syntax>
+<default>0</default>
+<context>http</context>
+<context>server</context>
+<context>location</context>
+
+<para>
+Allows the DELETE method to remove files provided that
+the number of elements in a request path is not less than the specified
+number.
+For example, the directive
+<example>
+min_delete_depth 4;
+</example>
+allows removing files on requests
+<example>
+/users/00/00/name
+/users/00/00/name/pic.jpg
+/users/00/00/page.html
+</example>
+and denies the removal of
+<example>
+/users/00/00
+</example>
+</para>
+
+</directive>
+
+</section>
+
+</module>

@@ -1,0 +1,373 @@
+<!--
+  Copyright (C) Nginx, Inc.
+  -->
+
+<!DOCTYPE article SYSTEM "../../dtd/article.dtd">
+
+<article name="nginx: Linux packages"
+         link="/en/linux_packages.html"
+         lang="en"
+         rev="10"
+         toc="no">
+
+<section id="distributions">
+
+<para>
+Currently, nginx packages are available for the following distributions and
+versions:
+</para>
+
+<para>
+RHEL/CentOS:
+
+<table note="yes">
+
+<tr>
+<td width="20%">Version</td>
+</tr>
+
+<tr>
+<td width="20%">5.x</td>
+</tr>
+
+<tr>
+<td width="20%">6.x</td>
+</tr>
+
+<tr>
+<td width="20%">7.x</td>
+</tr>
+
+</table>
+</para>
+
+<para>
+Debian:
+
+<table note="yes">
+
+<tr>
+<td width="20%">Version</td>
+<td>Codename</td>
+</tr>
+
+<tr>
+<td width="20%">6.x</td>
+<td>squeeze</td>
+</tr>
+
+<tr>
+<td width="20%">7.x</td>
+<td>wheezy</td>
+</tr>
+
+</table>
+</para>
+
+<para>
+Ubuntu:
+
+<table note="yes">
+
+<tr>
+<td width="20%">Version</td>
+<td>Codename</td>
+</tr>
+
+<tr>
+<td width="20%">10.04</td>
+<td>lucid</td>
+</tr>
+
+<tr>
+<td width="20%">12.04</td>
+<td>precise</td>
+</tr>
+
+<tr>
+<td width="20%">14.04</td>
+<td>trusty</td>
+</tr>
+
+<tr>
+<td width="20%">14.10</td>
+<td>utopic</td>
+</tr>
+
+</table>
+</para>
+
+<para>
+SLES:
+
+<table note="yes">
+
+<tr>
+<td width="20%">Version</td>
+</tr>
+
+<tr>
+ <td width="20%">12</td>
+</tr>
+
+</table>
+</para>
+
+<para>
+To enable automatic updates of Linux packages
+set up the yum repository for the RHEL/CentOS distributions,
+the apt repository for the Debian/Ubuntu distributions,
+or the zypper repository for SLES.
+</para>
+
+</section>
+
+
+<section name="Pre-Built Packages for Stable version" id="stable">
+
+<para>
+To set up the yum repository for RHEL/CentOS, choose the corresponding
+<literal>nginx-release</literal> package from the list:
+
+<list type="bullet">
+
+<listitem>
+<link url="http://nginx.org/packages/rhel/5/noarch/RPMS/nginx-release-rhel-5-0.el5.ngx.noarch.rpm">RHEL 5</link>
+</listitem>
+
+<listitem>
+<link url="http://nginx.org/packages/rhel/6/noarch/RPMS/nginx-release-rhel-6-0.el6.ngx.noarch.rpm">RHEL 6</link>
+</listitem>
+
+<listitem>
+<link url="http://nginx.org/packages/rhel/7/noarch/RPMS/nginx-release-rhel-7-0.el7.ngx.noarch.rpm">RHEL 7</link>
+</listitem>
+
+<listitem>
+<link url="http://nginx.org/packages/centos/5/noarch/RPMS/nginx-release-centos-5-0.el5.ngx.noarch.rpm">CentOS 5</link>
+</listitem>
+
+<listitem>
+<link url="http://nginx.org/packages/centos/6/noarch/RPMS/nginx-release-centos-6-0.el6.ngx.noarch.rpm">CentOS 6</link>
+</listitem>
+
+<listitem>
+<link url="http://nginx.org/packages/centos/7/noarch/RPMS/nginx-release-centos-7-0.el7.ngx.noarch.rpm">CentOS 7</link>
+</listitem>
+
+</list>
+
+This package contains yum configuration file
+and a public PGP key necessary to authenticate signed RPMs.
+Download and install it, then run the following:
+<programlisting>
+yum install nginx
+</programlisting>
+
+Alternatively, a repository configuration can be added manually
+without installing the <literal>nginx-release</literal> package.
+Create the file named <path>/etc/yum.repos.d/nginx.repo</path>
+with the following contents:
+
+<programlisting>
+[nginx]
+name=nginx repo
+baseurl=http://nginx.org/packages/OS/OSRELEASE/$basearch/
+gpgcheck=0
+enabled=1
+</programlisting>
+
+Replace “<literal>OS</literal>” with “<literal>rhel</literal>” or
+“<literal>centos</literal>”,
+depending on the distribution used, and “<literal>OSRELEASE</literal>”
+with “<literal>5</literal>”, “<literal>6</literal>”, or “<literal>7</literal>”,
+for 5.x, 6.x, or 7.x versions, respectively.
+</para>
+
+<para>
+For Debian/Ubuntu, in order to authenticate the nginx repository signature
+and to eliminate warnings about missing PGP key during installation of the
+nginx package, it is necessary to add the key used to sign the nginx
+packages and repository to the <command>apt</command> program keyring.
+Please download <link url="http://nginx.org/keys/nginx_signing.key">this
+key</link> from our web site, and add it to the <command>apt</command>
+program keyring with the following command:
+<programlisting>
+sudo apt-key add nginx_signing.key
+</programlisting>
+</para>
+
+<para>
+For Debian replace <i>codename</i> with Debian distribution
+<link id="distributions">codename</link>, and append the following to
+the end of the <path>/etc/apt/sources.list</path> file:
+
+<programlisting>
+deb http://nginx.org/packages/debian/ <i>codename</i> nginx
+deb-src http://nginx.org/packages/debian/ <i>codename</i> nginx
+</programlisting>
+</para>
+
+<para>
+For Ubuntu replace <i>codename</i> with Ubuntu distribution
+<link id="distributions">codename</link>, and append the following to
+the end of the <path>/etc/apt/sources.list</path> file:
+
+<programlisting>
+deb http://nginx.org/packages/ubuntu/ <i>codename</i> nginx
+deb-src http://nginx.org/packages/ubuntu/ <i>codename</i> nginx
+</programlisting>
+</para>
+
+<para>
+For Debian/Ubuntu then run the following commands:
+<programlisting>
+apt-get update
+apt-get install nginx
+</programlisting>
+</para>
+
+<para>
+For SLES run the following command:
+<programlisting>
+zypper addrepo -G -t yum -c 'http://nginx.org/packages/sles/12' nginx
+</programlisting>
+</para>
+
+</section>
+
+
+<section name="Pre-Built Packages for Mainline version" id="mainline">
+
+<para>
+To set up the yum repository for RHEL/CentOS, create the file named
+<path>/etc/yum.repos.d/nginx.repo</path>
+with the following contents:
+
+<programlisting>
+[nginx]
+name=nginx repo
+baseurl=http://nginx.org/packages/mainline/OS/OSRELEASE/$basearch/
+gpgcheck=0
+enabled=1
+</programlisting>
+
+Replace “<literal>OS</literal>” with “<literal>rhel</literal>” or
+“<literal>centos</literal>”,
+depending on the distribution used, and “<literal>OSRELEASE</literal>”
+with “<literal>5</literal>”, “<literal>6</literal>”, or “<literal>7</literal>”,
+for 5.x, 6.x, or 7.x versions, respectively.
+</para>
+
+<para>
+For Debian/Ubuntu, in order to authenticate the nginx repository signature
+and to eliminate warnings about missing PGP key during installation of the
+nginx package, it is necessary to add the key used to sign the nginx
+packages and repository to the <command>apt</command> program keyring.
+Please download <link url="http://nginx.org/keys/nginx_signing.key">this
+key</link> from our web site, and add it to the <command>apt</command>
+program keyring with the following command:
+<programlisting>
+sudo apt-key add nginx_signing.key
+</programlisting>
+</para>
+
+<para>
+For Debian replace <i>codename</i> with Debian distribution
+<link id="distributions">codename</link>, and append the following to
+the end of the <path>/etc/apt/sources.list</path> file:
+
+<programlisting>
+deb http://nginx.org/packages/mainline/debian/ <i>codename</i> nginx
+deb-src http://nginx.org/packages/mainline/debian/ <i>codename</i> nginx
+</programlisting>
+</para>
+
+<para>
+For Ubuntu replace <i>codename</i> with Ubuntu distribution
+<link id="distributions">codename</link>, and append the following to
+the end of the <path>/etc/apt/sources.list</path> file:
+
+<programlisting>
+deb http://nginx.org/packages/mainline/ubuntu/ <i>codename</i> nginx
+deb-src http://nginx.org/packages/mainline/ubuntu/ <i>codename</i> nginx
+</programlisting>
+</para>
+
+<para>
+For Debian/Ubuntu then run the following commands:
+<programlisting>
+apt-get update
+apt-get install nginx
+</programlisting>
+</para>
+
+<para>
+For SLES run the following command:
+<programlisting>
+zypper addrepo -G -t yum -c 'http://nginx.org/packages/mainline/sles/12' nginx
+</programlisting>
+</para>
+
+</section>
+
+
+<section name="Signatures" id="signatures">
+
+<para>
+Both RPM packages and Debian/Ubuntu repositories use digital signatures
+to verify the integrity and origin of the downloaded package.
+In order to check a signature it is necessary to download
+<link url="http://nginx.org/keys/nginx_signing.key">nginx signing key</link>
+and import it to the <command>rpm</command> or <command>apt</command>
+program’s keyring:
+
+<list type="bullet">
+
+<listitem>
+On Debian/Ubuntu:
+<programlisting>sudo apt-key add nginx_signing.key</programlisting>
+</listitem>
+
+<listitem>
+On RHEL/CentOS:
+<programlisting>sudo rpm --import nginx_signing.key</programlisting>
+</listitem>
+
+<listitem>
+On SLES:
+<programlisting>sudo rpm --import nginx_signing.key</programlisting>
+</listitem>
+
+</list>
+</para>
+
+<para>
+On Debian/Ubuntu/SLES signatures are checked by default, but
+on RHEL/CentOS it is necessary to set
+<programlisting>gpgcheck=1</programlisting> in the
+<path>/etc/yum.repos.d/nginx.repo</path> file.
+</para>
+
+<para>
+Since our <link doc="../en/pgp_keys.xml">PGP keys</link>
+and packages are located on the same server,
+they are equally trusted.
+It is highly advised to additionally verify
+the authenticity of the downloaded PGP key.
+PGP has the “Web of Trust” concept,
+when a key is signed by someone else’s key,
+that in turn is signed by another key and so on.
+It often makes possible to build a chain from an arbitrary key
+to someone’s key who you know and trust personally,
+thus verify the authenticity of the first key in a chain.
+This concept is described in details in
+<link url="http://www.dewinter.com/gnupg_howto/english/GPGMiniHowto-1.html">
+GPG Mini Howto</link>.
+Our keys have enough signatures,
+and their authenticity is relatively easy to check.
+</para>
+
+</section>
+
+</article>
