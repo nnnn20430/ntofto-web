@@ -9,7 +9,7 @@ cache-scanrc-ttl=1536
 cache-root=$CGIT_DIR/cache
 
 #clone-url=git://$SERVER_HOST/$CGIT_REPO_URL $SERVER_SCHEME://$SERVER_HOST:$SERVER_PORT/cgit/$CGIT_REPO_URL
-clone-url=$SERVER_SCHEME://$SERVER_HOST:$SERVER_PORT/cgit/$CGIT_REPO_URL
+clone-url=$SERVER_SCHEME://$SERVER_HOST_HEADER/cgit/$CGIT_REPO_URL
 
 enable-commit-graph=0
 
