@@ -3,6 +3,11 @@ favicon=/cgit/favicon.ico
 logo=/cgit/cgit.png
 virtual-root=/cgit/
 
+cache-static-ttl=-1
+cache-dynamic-ttl=5
+cache-repo-ttl=5
+cache-about-ttl=15
+cache-snapshot-ttl=5
 cache-size=10000
 cache-root-ttl=1536
 cache-scanrc-ttl=1536
@@ -13,6 +18,6 @@ clone-url=$SERVER_SCHEME://$SERVER_HOST_HEADER/cgit/$CGIT_REPO_URL
 
 enable-commit-graph=0
 
-snapshots=tar.gz tar.bz2 zip
+snapshots=tar tar.gz tar.bz2 tar.xz zip
 
 scan-path=$CGIT_DIR/root
