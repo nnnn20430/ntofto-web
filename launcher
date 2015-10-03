@@ -8,6 +8,7 @@ COMMAND_ARRAY=(
 	"./server/bin/server/nginx -p ${PWD}/nginxprefix/ -g 'daemon off;'"
 	"./server/bin/server/uwsgi --chdir ${PWD}/nginxprefix/ --ini ${PWD}/server/uwsgi.ini"
 	"PHP_FCGI_CHILDREN=1 ./server/bin/server/php-cgi -b $PWD/nginxprefix/php-fastcgi.socket -c $PWD/server/php.ini"
+	"./server/bin/server/fossil server --scgi --localhost --port 9003 --repolist \"${PWD}/nginxprefix/html/fossil/root\""
 	"./server/bin/git/git-daemon --port=9418 --base-path=\"${PWD}/nginxprefix/html/gitweb/root\" --export-all"
 )
 
