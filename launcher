@@ -5,7 +5,7 @@ cd "$SERVER_ROOT"
 
 #variables
 COMMAND_ARRAY=(
-	"rm -f ${PWD}/nginxprefix/servers/*; ./server/bin/nginx/nginx -p ${PWD}/nginxprefix/ -g 'daemon off;'"
+	"find nginxprefix/servers -mindepth 1 -not -name nginx_server_sockets -delete; ./server/bin/nginx/nginx -p ${PWD}/nginxprefix/ -g 'daemon off;'"
 	"./server/bin/uwsgi/uwsgi --chdir ${PWD}/nginxprefix/ -s $PWD/nginxprefix/handlers/uwsgi  --ini ${PWD}/server/uwsgi.ini"
 	"PHP_FCGI_CHILDREN=1 ./server/bin/php/php-cgi -b $PWD/nginxprefix/handlers/php-fastcgi -c $PWD/server/php.ini"
 	"PHP_FCGI_CHILDREN=1 ./server/bin/php/php-cgi -b 0.0.0.0:9000 -c $PWD/server/php.ini"
