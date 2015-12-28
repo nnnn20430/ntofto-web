@@ -20,6 +20,25 @@ $ make
 for openbay to work you need to configure it using this command:
 $ ./configure --enable-zip --enable-sockets --enable-bcmath --enable-ftp --enable-mbstring --with-openssl --with-gd --with-curl --with-zlib --with-mysql --with-pdo-mysql
 
+current configure command for php:
+$ ./configure --enable-zip \
+ --enable-sockets \
+ --enable-bcmath \
+ --enable-ftp \
+ --enable-mbstring \
+ --with-openssl \
+ --with-gd \
+ --with-curl \
+ --with-zlib \
+ --with-mysql=mysqlnd \
+ --with-mysqli=mysqlnd \
+ --with-pdo-mysql=mysqlnd \
+ --enable-pcntl \
+ --enable-opcache \
+ --enable-intl \
+ --enable-fpm \
+ --with-gmp
+
 go inside sapi/cgi and copy php-cgi binary
 
 
