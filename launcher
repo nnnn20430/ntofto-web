@@ -4,6 +4,8 @@ SERVER_ROOT=$(cd "${0%/*}" && echo "$PWD")
 cd "$SERVER_ROOT"
 
 #variables
+START_INIT_COMMAND="mount -t tmpfs tmpfs -o rw,mode=1777,strictatime ${PWD}/nginxprefix/tmp"
+STOP_CLEANUP_COMMAND="umount -fl ${PWD}/nginxprefix/tmp"
 COMMAND_ARRAY=(
 	"find nginxprefix/servers -mindepth 1 -not -name nginx_server_sockets -delete; ./server/bin/nginx/nginx -p ${PWD}/nginxprefix/ -g 'daemon off;'"
 	"UWSGI_MASTER=1 UWSGI_WORKERS=1 ./server/bin/uwsgi/uwsgi --chdir ${PWD}/nginxprefix/ -s ${PWD}/nginxprefix/handlers/uwsgi --ini ${PWD}/server/uwsgi.ini"
@@ -39,6 +41,7 @@ service_start() {
 		echo "Service still running."
 		return
 	fi
+	runInBg "${START_INIT_COMMAND}" >/dev/null
 	process_pids=""
 	for ((i = 0; i < ${#COMMAND_ARRAY[@]}; i++)); do
 		process_pids="${process_pids}$(runInBg "${COMMAND_ARRAY[$i]}")"$'\n'
@@ -60,6 +63,7 @@ service_stop() {
 		fi
 	done
 	rm ./collected_PID
+	runInBg "${STOP_CLEANUP_COMMAND}" >/dev/null
 }
 
 if test "$signal" = "start"; then
