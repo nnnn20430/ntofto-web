@@ -215,6 +215,7 @@ Web Server support
    Lighttpd
    Mongrel2
    Nginx
+   OpenBSDhttpd
 
 
 Language support
@@ -272,6 +273,12 @@ Stable releases
 .. toctree::
    :maxdepth: 1
 
+   Changelog-2.0.12
+   Changelog-2.0.11.2
+   Changelog-2.0.11.1
+   Changelog-2.0.11
+   Changelog-2.0.10
+   Changelog-2.0.9
    Changelog-2.0.8
    Changelog-2.0.7
    Changelog-2.0.6
@@ -304,13 +311,6 @@ Stable releases
    Changelog-1.9.1
    Changelog-1.9
    
-LTS releases
-------------
-
-.. toctree::
-   :maxdepth: 1
-
-   Changelog-1.4.10
 
 
 Contact
@@ -338,7 +338,7 @@ uWSGI development is sponsored by the Italian ISP `Unbit <http://unbit.it/>`_ an
 
 We will give credit to everyone who wants to sponsor new features.
 
-See the `old uWSGI site <http://projects.unbit.it/uwsgi/#Donateifyouwant>`_ for the donation link. You can also donate via `GitTip <https://www.gittip.com/unbit/>`_.
+Check http://unbit.it/uwsgi_donate for the donation link. You can also donate via `GitTip <https://www.gittip.com/unbit/>`_.
 
 Indices and tables
 ==================

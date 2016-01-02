@@ -752,6 +752,30 @@ if-not-hostname
 
 
 
+if-hostname-match
+***********
+``argument``: required_argument
+
+``parser``: uwsgi_opt_logic
+
+``flags``: UWSGI_OPT_IMMEDIATE
+
+``help``: (opt logic) try to match hostname against a regular expression
+
+
+
+if-not-hostname-match
+***************
+``argument``: required_argument
+
+``parser``: uwsgi_opt_logic
+
+``flags``: UWSGI_OPT_IMMEDIATE
+
+``help``: (opt logic) try to match hostname against a regular expression
+
+
+
 if-exists
 *********
 ``argument``: required_argument
@@ -1215,6 +1239,8 @@ buffer-size
 ``help``: set internal buffer size
 
 
+
+Set the max size of a request (request-body excluded), this generally maps to the size of request headers. By default it is 4k. If you receive a bigger request (for example with big cookies or query string) you may need to increase it. It is a security measure too, so adapt to your app needs instead of maxing it out.
 
 memory-report
 *************
@@ -1836,7 +1862,7 @@ emperor-fork-server-attr
 
 ``parser``: uwsgi_opt_set_str
 
-``help``: set teh vassal's attribute to get when checking for fork-server
+``help``: set the vassal's attribute to get when checking for fork-server
 
 
 
@@ -2044,9 +2070,9 @@ die-on-term
 ***********
 ``argument``: no_argument
 
-``parser``: uwsgi_opt_true
+``parser``: uwsgi_opt_deprecated
 
-``help``: exit instead of brutal reload on SIGTERM
+``help``: exit instead of brutal reload on SIGTERM (no more needed)
 
 
 
@@ -2554,7 +2580,7 @@ spooler-frequency
 
 ``parser``: uwsgi_opt_set_int
 
-``help``: set spooler frequency
+``help``: set spooler frequency, default 30 seconds
 
 
 
@@ -2564,7 +2590,7 @@ spooler-freq
 
 ``parser``: uwsgi_opt_set_int
 
-``help``: set spooler frequency
+``help``: set spooler frequency, default 30 seconds
 
 
 
@@ -2783,6 +2809,26 @@ pidfile2
 ``parser``: uwsgi_opt_set_str
 
 ``help``: create pidfile (after privileges drop)
+
+
+
+safe-pidfile
+************
+``argument``: required_argument
+
+``parser``: uwsgi_opt_set_str
+
+``help``: create safe pidfile (before privileges drop)
+
+
+
+safe-pidfile2
+*************
+``argument``: required_argument
+
+``parser``: uwsgi_opt_set_str
+
+``help``: create safe pidfile (after privileges drop)
 
 
 
@@ -3219,6 +3265,16 @@ hook-post-app
 ``parser``: uwsgi_opt_add_string_list
 
 ``help``: run the specified hook after app loading
+
+
+
+hook-post-fork
+**************
+``argument``: required_argument
+
+``parser``: uwsgi_opt_add_string_list
+
+``help``: run the specified hook after each fork
 
 
 
@@ -5380,6 +5436,18 @@ start-unsubscribed
 
 
 
+subscribe-with-modifier1
+************************
+``argument``: required_argument
+
+``parser``: uwsgi_opt_set_str
+
+``flags``: UWSGI_OPT_MASTER
+
+``help``: force the specififed modifier1 when subscribing
+
+
+
 snmp
 ****
 ``argument``: optional_argument
@@ -6465,6 +6533,16 @@ cheaper-overload
 ``help``: increase workers after specified overload
 
 
+cheaper-idle
+****************
+``argument``: required_argument
+
+``parser``: uwsgi_opt_set_int
+
+``flags``: UWSGI_OPT_MASTER | UWSGI_OPT_CHEAPER
+
+``help``: decrease workers after specified idle (algo: spare2) (default: 10)
+
 
 cheaper-algo-list
 *****************
@@ -7361,6 +7439,16 @@ response-header-collect
 ``parser``: uwsgi_opt_add_string_list
 
 ``help``: store the specified response header in a request var (syntax: header var)
+
+
+
+pull-header
+***********
+``argument``: required_argument
+
+``parser``: uwsgi_opt_add_string_list
+
+``help``: store the specified response header in a request var and remove it from the response (syntax: header var)
 
 
 
@@ -9244,7 +9332,7 @@ fastrouter-post-buffering-dir
 
 ``parser``: uwsgi_opt_set_str
 
-``help``: put fastrouter buffered files to the specified directory
+``help``: put fastrouter buffered files to the specified directory (noop, use TMPDIR env)
 
 
 
@@ -10055,6 +10143,16 @@ http-websockets
 ``parser``: uwsgi_opt_true
 
 ``help``: automatically detect websockets connections and put the session in raw mode
+
+
+
+http-chunked-input
+******************
+``argument``: no_argument
+
+``parser``: uwsgi_opt_true
+
+``help``: automatically detect chunked input requests and put the session in raw mode
 
 
 
@@ -11418,7 +11516,7 @@ test
 
 ``parser``: uwsgi_opt_set_str
 
-``help``: test a mdule import
+``help``: test a module import
 
 
 
@@ -12514,7 +12612,7 @@ rawrouter-xclient
 
 ``parser``: uwsgi_opt_true
 
-``help``: use the xclient protocol to pass the client addres
+``help``: use the xclient protocol to pass the client address
 
 
 

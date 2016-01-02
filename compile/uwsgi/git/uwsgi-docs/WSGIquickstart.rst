@@ -58,32 +58,24 @@ Installing via your package distribution is not covered (would be impossible to 
 
 One thing you may want to take into account when testing this quickstart with distro-supplied packages, is that very probably your distribution
 has built uWSGI in modular way (every feature is a different plugin that must be loaded). To complete this quickstart,
-you have to prepend ``--plugin python,http`` to the first series of examples, and ``--plugin python`` when the HTTP router is removed (it could make
-no sense for you, just continue reading).
+you have to prepend ``--plugin python,http`` to the first series of examples, and ``--plugin python`` when the HTTP router is removed (if this
+doesn't make sense to you, just continue reading).
 
 The first WSGI application
 **************************
 
-Let's start with a simple "Hello World" example (this is for Python 2.x, Python 3.x requires the returned string to be bytes, see lower):
-
-.. code-block:: python
-
-   def application(env, start_response):
-       start_response('200 OK', [('Content-Type','text/html')])
-       return ["Hello World"]
-
-(save it as ``foobar.py``).
-
-As you can see, it is composed of a single Python function. It is called "application" as this is default function
-that the uWSGI Python loader will search for (but you can obviously customize it).
-
-The Python 3.x version is the following:
+Let's start with a simple "Hello World" example:
 
 .. code-block:: python
 
    def application(env, start_response):
        start_response('200 OK', [('Content-Type','text/html')])
        return [b"Hello World"]
+
+(save it as ``foobar.py``).
+
+As you can see, it is composed of a single Python function. It is called "application" as this is default function
+that the uWSGI Python loader will search for (but you can obviously customize it).
 
 Deploy it on HTTP port 9090
 ***************************
@@ -96,7 +88,8 @@ Now start uWSGI to run an HTTP server/router passing requests to your WSGI appli
 
 That's all.
 
-.. note:: Do not use --http when you have a frontend webserver, use --http-socket. Continue reading the quickstart to understand why.
+.. note:: Do not use --http when you have a frontend webserver or you are doing some form of benchmark, use --http-socket. Continue reading the quickstart to understand why.
+
 
 Adding concurrency and monitoring
 *********************************

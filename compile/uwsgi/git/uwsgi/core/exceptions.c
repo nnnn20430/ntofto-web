@@ -35,7 +35,7 @@ extern struct uwsgi_server uwsgi;
 		struct uwsgi_buffer *exception_repr(struct wsgi_request *);
 		void exception_log(struct wsgi_request *);
 
-		Remember to reset the exception status (if possibile) after each call
+		Remember to reset the exception status (if possible) after each call
 
 	Exceptions catcher:
 
@@ -464,6 +464,7 @@ void uwsgi_exception_setup_handlers() {
 
 	struct uwsgi_string_list *usl = uwsgi.exception_handlers_instance;
 	while(usl) {
+		// do not free handler !!!
 		char *handler = uwsgi_str(usl->value);
 		char *colon = strchr(handler, ':');
 		if (colon) {
@@ -472,10 +473,8 @@ void uwsgi_exception_setup_handlers() {
 		struct uwsgi_exception_handler *ueh = uwsgi_exception_handler_by_name(handler);
 		if (!ueh) {
 			uwsgi_log("unable to find exception handler: %s\n", handler);
-			free(handler);
 			exit(1);
 		}
-		free(handler);
 
 		struct uwsgi_exception_handler_instance *uehi = uwsgi_calloc(sizeof(struct uwsgi_exception_handler_instance));
 		uehi->handler = ueh;

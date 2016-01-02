@@ -254,34 +254,6 @@ int uwsgi_perl_obj_can(SV *obj, char *method, size_t len) {
 
 }
 
-int uwsgi_perl_obj_isa(SV *obj, char *class) {
-
-	int ret = 0;
-
-        dSP;
-
-        ENTER;
-        SAVETMPS;
-        PUSHMARK(SP);
-        XPUSHs(obj);
-        PUTBACK;
-
-        call_pv( "Scalar::Util::reftype", G_SCALAR|G_EVAL);
-
-        SPAGAIN;
-        char *reftype = POPp;
-	if (reftype && !strcmp(reftype, class)) {
-		ret = 1;
-	}
-        PUTBACK;
-        FREETMPS;
-        LEAVE;
-
-        return ret;
-
-}
-
-
 SV *uwsgi_perl_obj_call(SV *obj, char *method) {
 
         SV *ret = NULL;
@@ -361,9 +333,9 @@ SV *build_psgi_env(struct wsgi_request *wsgi_req) {
 
                         // check for multiline header
                         if (hv_exists(env, wsgi_req->hvec[i].iov_base, wsgi_req->hvec[i].iov_len)) {
-                                SV **already_avalable_header = hv_fetch(env, wsgi_req->hvec[i].iov_base, wsgi_req->hvec[i].iov_len, 0);
+                                SV **already_available_header = hv_fetch(env, wsgi_req->hvec[i].iov_base, wsgi_req->hvec[i].iov_len, 0);
                                 STRLEN hlen;
-                                char *old_value = SvPV(*already_avalable_header, hlen );
+                                char *old_value = SvPV(*already_available_header, hlen );
                                 char *multiline_header = uwsgi_concat3n(old_value, hlen, ", ", 2, wsgi_req->hvec[i+1].iov_base, wsgi_req->hvec[i+1].iov_len);
                                 if (!hv_store(env, wsgi_req->hvec[i].iov_base, wsgi_req->hvec[i].iov_len,
                                         newSVpv(multiline_header, hlen+wsgi_req->hvec[i+1].iov_len+2), 0))  { free(multiline_header); goto clear;}
@@ -389,30 +361,15 @@ SV *build_psgi_env(struct wsgi_request *wsgi_req) {
         av_store( av, 1, newSViv(1));
         if (!hv_store(env, "psgi.version", 12, newRV_noinc((SV *)av ), 0)) goto clear;
 
-        if (uwsgi.numproc > 1) {
-                if (!hv_store(env, "psgi.multiprocess", 17, newSViv(1), 0)) goto clear;
-        }
-        else {
-                if (!hv_store(env, "psgi.multiprocess", 17, newSViv(0), 0)) goto clear;
-        }
+        // All the simple bools.
+        if (!hv_store(env, "psgi.multiprocess", 17, uwsgi.numproc > 1    ? &PL_sv_yes : &PL_sv_no, 0)) goto clear;
+        if (!hv_store(env, "psgi.multithread",  16, uwsgi.threads > 1    ? &PL_sv_yes : &PL_sv_no, 0)) goto clear;
+        if (!hv_store(env, "psgi.nonblocking",  16, uwsgi.async   > 0    ? &PL_sv_yes : &PL_sv_no, 0)) goto clear;
+        if (!hv_store(env, "psgix.harakiri",    14, uwsgi.master_process ? &PL_sv_yes : &PL_sv_no, 0)) goto clear;
 
-        if (uwsgi.threads > 1) {
-                if (!hv_store(env, "psgi.multithread", 16, newSViv(1), 0)) goto clear;
-        }
-        else {
-                if (!hv_store(env, "psgi.multithread", 16, newSViv(0), 0)) goto clear;
-        }
-
-        if (!hv_store(env, "psgi.run_once", 13, newSViv(0), 0)) goto clear;
-
-        if (uwsgi.async > 0) {
-                if (!hv_store(env, "psgi.nonblocking", 16, newSViv(1), 0)) goto clear;
-        }
-        else {
-                if (!hv_store(env, "psgi.nonblocking", 16, newSViv(0), 0)) goto clear;
-        }
-
-        if (!hv_store(env, "psgi.streaming", 14, newSViv(1), 0)) goto clear;
+        if (!hv_store(env, "psgi.run_once",  13, &PL_sv_no,  0)) goto clear;
+        if (!hv_store(env, "psgi.streaming", 14, &PL_sv_yes, 0)) goto clear;
+        if (!hv_store(env, "psgix.cleanup",  13, &PL_sv_yes, 0)) goto clear;
 
 	SV *us;
         // psgi.url_scheme, honour HTTPS var or UWSGI_SCHEME
@@ -446,11 +403,6 @@ SV *build_psgi_env(struct wsgi_request *wsgi_req) {
 		if (!hv_store(env, "psgix.logger", 12,newRV((SV*) ((SV **)wi->responder1)[0]) ,0)) goto clear;
 	}
 
-	if (uwsgi.master_process) {
-		if (!hv_store(env, "psgix.harakiri", 14, newSViv(1), 0)) goto clear;
-	}
-
-	if (!hv_store(env, "psgix.cleanup", 13, newSViv(1), 0)) goto clear;
 	// cleanup handlers array
 	av = newAV();
 	if (!hv_store(env, "psgix.cleanup.handlers", 22, newRV_noinc((SV *)av ), 0)) goto clear;
@@ -684,6 +636,19 @@ void uwsgi_perl_after_request(struct wsgi_request *wsgi_req) {
 	// before the environ is set up.
 	if (!wsgi_req->async_environ) return;
 
+	// we need to restore the context in case of multiple interpreters
+	struct uwsgi_app *wi = &uwsgi_apps[wsgi_req->app_id];
+	if (uwsgi.threads < 2) {
+                if (((PerlInterpreter **)wi->interpreter)[0] != uperl.main[0]) {
+                        PERL_SET_CONTEXT(((PerlInterpreter **)wi->interpreter)[0]);
+                }
+        }
+        else {
+                if (((PerlInterpreter **)wi->interpreter)[wsgi_req->async_id] != uperl.main[wsgi_req->async_id]) {
+                        PERL_SET_CONTEXT(((PerlInterpreter **)wi->interpreter)[wsgi_req->async_id]);
+                }
+        }
+
 	// dereference %env
 	SV *env = SvRV((SV *) wsgi_req->async_environ);
 
@@ -720,7 +685,7 @@ void uwsgi_perl_after_request(struct wsgi_request *wsgi_req) {
 
 		// mark the request as ended (otherwise the atexit hook will be skipped)
 		uwsgi.workers[uwsgi.mywid].cores[wsgi_req->async_id].in_request = 0;
-		goodbye_cruel_world();
+		goodbye_cruel_world("async plagued");
 	}
 
 	// now we can check for changed files
@@ -730,6 +695,19 @@ void uwsgi_perl_after_request(struct wsgi_request *wsgi_req) {
                         uwsgi_perl_check_auto_reload();
                 }
         }
+
+	// restore main interpreter if needed
+        if (uwsgi.threads > 1) {
+                if (((PerlInterpreter **)wi->interpreter)[wsgi_req->async_id] != uperl.main[wsgi_req->async_id]) {
+                        PERL_SET_CONTEXT(uperl.main[wsgi_req->async_id]);
+                }
+        }
+        else {
+                if (((PerlInterpreter **)wi->interpreter)[0] != uperl.main[0]) {
+                        PERL_SET_CONTEXT(uperl.main[0]);
+                }
+        }
+
 
 }
 

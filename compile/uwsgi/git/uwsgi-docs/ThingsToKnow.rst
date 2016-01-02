@@ -6,8 +6,8 @@ Things to know (best practices and "issues") READ IT !!!
   TL/DR: if you plan to expose uWSGI directly to the public, use --http, if you want to proxy it behind a webserver speaking http with backends, use --http-socket.
   .. seealso:: :doc:`HTTP`
 
-* By default, sending the ``SIGTERM`` signal to uWSGI means "brutally reload the stack" while the convention is to shut an application down on ``SIGTERM``. To shutdown uWSGI use ``SIGINT`` or ``SIGQUIT`` instead.
-  If you absolutely can not live with uWSGI being so disrespectful towards ``SIGTERM``, by all means enable the ``die-on-term`` option.
+* Til uWSGI 2.1, by default, sending the ``SIGTERM`` signal to uWSGI means "brutally reload the stack" while the convention is to shut an application down on ``SIGTERM``. To shutdown uWSGI use ``SIGINT`` or ``SIGQUIT`` instead.
+  If you absolutely can not live with uWSGI being so disrespectful towards ``SIGTERM``, by all means enable the ``die-on-term`` option. Fortunately, this bad choice has been fixed in uWSGI 2.1
 
 * If you plan to host multiple applications do yourself a favor and check the :doc:`Emperor` docs.
 
@@ -29,7 +29,7 @@ Things to know (best practices and "issues") READ IT !!!
 
 * Common sense: do not run uWSGI instances as root. You can start your uWSGIs as root, but be sure to drop privileges with the ``uid`` and ``gid`` options.
 
-* uWSGI tries to (ab)use the Copy On Write semantics of the `fork() <http://en.wikipedia.org/wiki/Fork_%28operating_system%29>`_ call whenever possible. By default it will fork after having loaded your applications to share as much of their memory as possible. If this behavior is undesirable for some reason, use the ``lazy`` option. This will instruct uWSGI to load the applications after each worker's ``fork()``. Lazy mode changes the way graceful reloading works: instead of reloading the whole instance, each worker is reloaded in chain. If you want "lazy app loading", but want to maintain the standard uWSGI reloading behaviour, starting from 1.3 you can use the ``lazy-apps`` option.
+* uWSGI tries to (ab)use the Copy On Write semantics of the `fork() <http://en.wikipedia.org/wiki/Fork_%28operating_system%29>`_ call whenever possible. By default it will fork after having loaded your applications to share as much of their memory as possible. If this behavior is undesirable for some reason, use the ``lazy-apps`` option. This will instruct uWSGI to load the applications after each worker's ``fork()``. Beware as there is an older options named ``lazy`` that is way more invasive and highly discouraged (it is still here only for backward compatibility)
 
 * By default the Python plugin does not initialize the GIL. This means your app-generated threads will not run. If you need threads, remember to enable them with ``enable-threads``. Running uWSGI in multithreading mode (with the ``threads`` options) will automatically enable threading support. This "strange" default behaviour is for performance reasons, no shame in that.
 
@@ -49,7 +49,7 @@ Things to know (best practices and "issues") READ IT !!!
 
 * If your (Linux) server seems to have lots of idle workers, but performance is still sub-par, you may want to look at the value of the ``ip_conntrack_max`` system variable (``/proc/sys/net/ipv4/ip_conntrack_max``) and increase it to see if it helps.
 
-* Some Linux distributions (read: Debian Etch 4) make a mix of newer kernels with very old userspace. This kind of combination can make the uWSGI build system spit out errors (most notably on ``unshare()``, pthread locking, ``inotify``...). You can force uWSGI to configure itself for an older system prefixing the 'make' (or whatever way you use to build it) with ``CFLAGS="-DOBSOLETE_LINUX_KERNEL"``
+* Some Linux distributions (read: Debian 4 Etch, RHEL / CentOS 5) make a mix of newer kernels with very old userspace. This kind of combination can make the uWSGI build system spit out errors (most notably on ``unshare()``, pthread locking, ``inotify``...). You can force uWSGI to configure itself for an older system prefixing the 'make' (or whatever way you use to build it) with ``CFLAGS="-DOBSOLETE_LINUX_KERNEL"``
 
 * By default, stdin is remapped to ``/dev/null`` on uWSGI startup. If you need a valid stdin (for debugging, piping and so on) add ``--honour-stdin``.
 

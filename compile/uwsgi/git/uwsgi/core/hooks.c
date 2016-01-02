@@ -91,6 +91,14 @@ static int uwsgi_hook_exec(char *arg) {
 	return ret;
 }
 
+static int uwsgi_hook_safeexec(char *arg) {
+        int ret = uwsgi_run_command_and_wait(NULL, arg);
+        if (ret != 0) {
+                uwsgi_log("command \"%s\" exited with non-zero code: %d\n", arg, ret);
+        }
+        return 0;
+}
+
 static int uwsgi_hook_exit(char *arg) {
 	int exit_code = 0;
 	if (strlen(arg) > 1) {
@@ -388,15 +396,34 @@ static int uwsgi_hook_chown2(char *arg) {
 }
 
 
-#ifdef __sun__
+#if defined(UWSGI_SUNOS_EXTERN_SETHOSTNAME)
 extern int sethostname(char *, int);
 #endif
+
 static int uwsgi_hook_hostname(char *arg) {
 #ifdef __CYGWIN__
 	return -1;
 #else
 	return sethostname(arg, strlen(arg));
 #endif
+}
+
+static int uwsgi_hook_unix_signal(char *arg) {
+	char *space = strchr(arg, ' ');
+	if (!space) {
+		uwsgi_log("invalid unix_signal syntax, must be <signum> <func>\n");
+		return -1;
+	}
+	*space = 0;
+	int signum = atoi(arg);
+	*space = ' ';
+	void (*func)(int) = dlsym(RTLD_DEFAULT, space+1);
+	if (!func) {
+		uwsgi_log("unable to find function \"%s\"\n", space+1);
+		return -1;
+	}
+	uwsgi_unix_signal(signum, func);
+	return 0;
 }
 
 
@@ -561,6 +588,10 @@ static int uwsgi_hook_wait_for_dir(char *arg) {
 	return uwsgi_wait_for_fs(arg, 2);
 }
 
+static int uwsgi_hook_wait_for_socket(char *arg) {
+	return uwsgi_wait_for_socket(arg);
+}
+
 void uwsgi_register_base_hooks() {
 	uwsgi_register_hook("cd", uwsgi_hook_chdir);
 	uwsgi_register_hook("chdir", uwsgi_hook_chdir);
@@ -574,6 +605,7 @@ void uwsgi_register_base_hooks() {
 	uwsgi_register_hook("sticky", uwsgi_hook_sticky);
 
 	uwsgi_register_hook("exec", uwsgi_hook_exec);
+	uwsgi_register_hook("safeexec", uwsgi_hook_safeexec);
 
 	uwsgi_register_hook("create", uwsgi_hook_creat);
 	uwsgi_register_hook("creat", uwsgi_hook_creat);
@@ -604,6 +636,10 @@ void uwsgi_register_base_hooks() {
 	uwsgi_register_hook("wait_for_fs", uwsgi_hook_wait_for_fs);
 	uwsgi_register_hook("wait_for_file", uwsgi_hook_wait_for_file);
 	uwsgi_register_hook("wait_for_dir", uwsgi_hook_wait_for_dir);
+
+	uwsgi_register_hook("wait_for_socket", uwsgi_hook_wait_for_socket);
+
+	uwsgi_register_hook("unix_signal", uwsgi_hook_unix_signal);
 
 	// for testing
 	uwsgi_register_hook("exit", uwsgi_hook_exit);
@@ -738,7 +774,8 @@ void uwsgi_hooks_setns_run(struct uwsgi_string_list *l, pid_t pid, uid_t uid, gi
 					uwsgi_error("uwsgi_hooks_setns_run()/setns()");
 					exit(1);
 				}
-
+				close(fd);
+				free(procfile);
                 	}
 
 			if (setenv("UWSGI_VASSAL_PID", pidstr, 1)) {

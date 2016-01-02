@@ -96,7 +96,7 @@ static int transform_memcached(struct wsgi_request *wsgi_req, struct uwsgi_trans
         struct uwsgi_transformation_memcached_conf *utmc = (struct uwsgi_transformation_memcached_conf *) ut->data;
         struct uwsgi_buffer *ub = ut->chunk;
 
-        // store only successfull response
+        // store only successful response
         if (wsgi_req->write_errors == 0 && wsgi_req->status == 200 && ub->pos > 0) {
 		memcached_store(utmc->addr->buf, utmc->key, ub, utmc->expires);
         }
@@ -312,6 +312,7 @@ static int uwsgi_router_memcached(struct uwsgi_route *ur, char *args) {
 
 	if (!urmc->key || !urmc->addr) {
 		uwsgi_log("invalid route syntax: you need to specify a memcached address and key pattern\n");
+		free(urmc);
 		return -1;
 	}
 
@@ -346,6 +347,7 @@ static int uwsgi_router_memcached_store(struct uwsgi_route *ur, char *args) {
 
 		if (!urmc->key || !urmc->addr) {
                         uwsgi_log("invalid memcachedstore route syntax: you need to specify an address and a key\n");
+			free(urmc);
 			return -1;
                 }
 

@@ -2,6 +2,33 @@
 
 extern struct uwsgi_server uwsgi;
 
+static void master_check_processes() {
+
+	// run the function, only if required
+	if (!uwsgi.die_on_no_workers) return;
+
+	int alive_processes = 0;
+	int dead_processes = 0;
+
+	int i;
+	for (i = 1; i <= uwsgi.numproc; i++) {
+		if (uwsgi.workers[i].cheaped == 0 && uwsgi.workers[i].pid > 0) {
+			alive_processes++;
+		}
+		else {
+			dead_processes++;
+		}
+	}
+
+	if (uwsgi.die_on_no_workers) {
+		if (!alive_processes) {
+			uwsgi_log_verbose("no more processes running, auto-killing ...\n");
+			exit(1);
+			// never here;
+		}
+	}
+}
+
 void uwsgi_update_load_counters() {
 
 	int i;
@@ -258,17 +285,18 @@ static void master_check_listen_queue() {
 		if (uwsgi_sock->queue > backlog) {
 			backlog = uwsgi_sock->queue;
 		}
+
 		if (uwsgi_sock->queue > 0 && uwsgi_sock->queue >= uwsgi_sock->max_queue) {
 			uwsgi_log_verbose("*** uWSGI listen queue of socket \"%s\" (fd: %d) full !!! (%llu/%llu) ***\n", uwsgi_sock->name, uwsgi_sock->fd, (unsigned long long) uwsgi_sock->queue, (unsigned long long) uwsgi_sock->max_queue);
-		}
 
-		if (uwsgi.alarm_backlog) {
-			char buf[1024];
-			int ret = snprintf(buf, 1024, "listen queue of socket \"%s\" (fd: %d) full !!! (%llu/%llu)", uwsgi_sock->name, uwsgi_sock->fd, (unsigned long long) uwsgi_sock->queue, (unsigned long long) uwsgi_sock->max_queue);
-			if (ret > 0 && ret < 1024) {
-				struct uwsgi_string_list *usl = NULL;
-				uwsgi_foreach(usl, uwsgi.alarm_backlog) {
-					uwsgi_alarm_trigger(usl->value, buf, ret);
+			if (uwsgi.alarm_backlog) {
+				char buf[1024];
+				int ret = snprintf(buf, 1024, "listen queue of socket \"%s\" (fd: %d) full !!! (%llu/%llu)", uwsgi_sock->name, uwsgi_sock->fd, (unsigned long long) uwsgi_sock->queue, (unsigned long long) uwsgi_sock->max_queue);
+				if (ret > 0 && ret < 1024) {
+					struct uwsgi_string_list *usl = NULL;
+					uwsgi_foreach(usl, uwsgi.alarm_backlog) {
+						uwsgi_alarm_trigger(usl->value, buf, ret);
+					}
 				}
 			}
 		}
@@ -642,6 +670,13 @@ int master_loop(char **argv, char **environ) {
 				return 0;
 		}
 
+		// spooler cheap management
+		if (uwsgi.spooler_cheap) {
+			if ((uwsgi.master_cycles % uwsgi.spooler_frequency) == 0) {
+				uwsgi_spooler_cheap_check();
+			}
+		}
+
 
 		// check if someone is dead
 		diedpid = waitpid(WAIT_ANY, &waitpid_status, WNOHANG);
@@ -726,6 +761,8 @@ int master_loop(char **argv, char **environ) {
 
 			// update load counter
 			uwsgi_update_load_counters();
+
+			master_check_processes();
 
 
 			// check uwsgi-cron table

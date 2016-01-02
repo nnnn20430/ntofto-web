@@ -111,7 +111,7 @@ struct uwsgi_option uwsgi_python_options[] = {
 	{"module", required_argument,'w', "load a WSGI module", uwsgi_opt_set_str, &up.wsgi_config, 0},
 	{"wsgi", required_argument, 'w', "load a WSGI module", uwsgi_opt_set_str, &up.wsgi_config, 0},
 	{"callable", required_argument, 0, "set default WSGI callable name", uwsgi_opt_set_str, &up.callable, 0},
-	{"test", required_argument, 'J', "test a mdule import", uwsgi_opt_set_str, &up.test_module, 0},
+	{"test", required_argument, 'J', "test a module import", uwsgi_opt_set_str, &up.test_module, 0},
 	{"home", required_argument, 'H', "set PYTHONHOME/virtualenv", uwsgi_opt_set_str, &up.home, 0},
 	{"virtualenv", required_argument, 'H', "set PYTHONHOME/virtualenv", uwsgi_opt_set_str, &up.home, 0},
 	{"venv", required_argument, 'H', "set PYTHONHOME/virtualenv", uwsgi_opt_set_str, &up.home, 0},
@@ -149,6 +149,7 @@ struct uwsgi_option uwsgi_python_options[] = {
 
 	{"paste", required_argument, 0, "load a paste.deploy config file", uwsgi_opt_set_str, &up.paste, 0},
 	{"paste-logger", no_argument, 0, "enable paste fileConfig logger", uwsgi_opt_true, &up.paste_logger, 0},
+	{"paste-name", required_argument, 0, "specify the name of the paste section", uwsgi_opt_set_str, &up.paste_name, 0},
 
 
 	{"web3", required_argument, 0, "load a web3 app", uwsgi_opt_set_str, &up.web3, 0},
@@ -183,6 +184,8 @@ struct uwsgi_option uwsgi_python_options[] = {
 	{"wsgi-accept-buffer", no_argument, 0, "accept CPython buffer-compliant objects as WSGI response in addition to string/bytes", uwsgi_opt_true, &up.wsgi_accept_buffer, 0},
 	{"wsgi-accept-buffers", no_argument, 0, "accept CPython buffer-compliant objects as WSGI response in addition to string/bytes", uwsgi_opt_true, &up.wsgi_accept_buffer, 0},
 
+	{"wsgi-disable-file-wrapper", no_argument, 0, "disable wsgi.file_wrapper feature", uwsgi_opt_true, &up.wsgi_disable_file_wrapper, 0},
+
 	{"python-version", no_argument, 0, "report python version", uwsgi_opt_pyver, NULL, UWSGI_OPT_IMMEDIATE},
 
 	{"python-raw", required_argument, 0, "load a python file for managing raw requests", uwsgi_opt_set_str, &up.raw, 0},
@@ -198,21 +201,25 @@ struct uwsgi_option uwsgi_python_options[] = {
 	{"early-python-import", required_argument, 0, "import a python module in the early phase", uwsgi_early_python_import, NULL, UWSGI_OPT_IMMEDIATE},
 	{"early-pythonpath", required_argument, 0, "add directory (or glob) to pythonpath (immediate version)", uwsgi_opt_pythonpath, NULL,  UWSGI_OPT_IMMEDIATE},
 	{"early-python-path", required_argument, 0, "add directory (or glob) to pythonpath (immediate version)", uwsgi_opt_pythonpath, NULL,  UWSGI_OPT_IMMEDIATE},
+	{"python-worker-override", required_argument, 0, "override worker with the specified python script", uwsgi_opt_set_str, &up.worker_override, 0},
 
 	{0, 0, 0, 0, 0, 0, 0},
 };
 
 /* this routine will be called after each fork to reinitialize the various locks */
 void uwsgi_python_pthread_prepare(void) {
-	pthread_mutex_lock(&up.lock_pyloaders);
+	if (!up.is_dynamically_loading_an_app)
+		pthread_mutex_lock(&up.lock_pyloaders);
 }
 
 void uwsgi_python_pthread_parent(void) {
-	pthread_mutex_unlock(&up.lock_pyloaders);
+	if (!up.is_dynamically_loading_an_app)
+		pthread_mutex_unlock(&up.lock_pyloaders);
 }
 
 void uwsgi_python_pthread_child(void) {
-	pthread_mutex_init(&up.lock_pyloaders, NULL);
+	if (!up.is_dynamically_loading_an_app)
+		pthread_mutex_init(&up.lock_pyloaders, NULL);
 }
 
 PyMethodDef uwsgi_spit_method[] = { {"uwsgi_spit", py_uwsgi_spit, METH_VARARGS, ""} };
@@ -1076,6 +1083,17 @@ void uwsgi_python_preinit_apps() {
 	if (up.pre_initialized) goto ready;
 	up.pre_initialized = 1;
 
+	// setup app loaders
+	up.loaders[LOADER_DYN] = uwsgi_dyn_loader;
+	up.loaders[LOADER_UWSGI] = uwsgi_uwsgi_loader;
+	up.loaders[LOADER_FILE] = uwsgi_file_loader;
+	up.loaders[LOADER_PECAN] = uwsgi_pecan_loader;
+	up.loaders[LOADER_PASTE] = uwsgi_paste_loader;
+	up.loaders[LOADER_EVAL] = uwsgi_eval_loader;
+	up.loaders[LOADER_MOUNT] = uwsgi_mount_loader;
+	up.loaders[LOADER_CALLABLE] = uwsgi_callable_loader;
+	up.loaders[LOADER_STRING_CALLABLE] = uwsgi_string_callable_loader;
+
 	init_pyargv();
 
         init_uwsgi_embedded_module();
@@ -1135,17 +1153,6 @@ void uwsgi_python_init_apps() {
 		up.current_recursion_depth = uwsgi_malloc(sizeof(int)*uwsgi.async);
         	up.current_frame = uwsgi_malloc(sizeof(struct _frame)*uwsgi.async);
 	}
-
-        // setup app loaders
-        up.loaders[LOADER_DYN] = uwsgi_dyn_loader;
-        up.loaders[LOADER_UWSGI] = uwsgi_uwsgi_loader;
-        up.loaders[LOADER_FILE] = uwsgi_file_loader;
-        up.loaders[LOADER_PECAN] = uwsgi_pecan_loader;
-        up.loaders[LOADER_PASTE] = uwsgi_paste_loader;
-        up.loaders[LOADER_EVAL] = uwsgi_eval_loader;
-        up.loaders[LOADER_MOUNT] = uwsgi_mount_loader;
-        up.loaders[LOADER_CALLABLE] = uwsgi_callable_loader;
-        up.loaders[LOADER_STRING_CALLABLE] = uwsgi_string_callable_loader;
 
 	struct uwsgi_string_list *upli = up.import_list;
 	while(upli) {
@@ -1660,6 +1667,26 @@ void uwsgi_python_add_item(char *key, uint16_t keylen, char *val, uint16_t valle
 	Py_DECREF(zero);
 }
 
+PyObject *uwsgi_python_dict_from_spooler_content(char *filename, char *buf, uint16_t len, char *body, size_t body_len) {
+
+	PyObject *spool_dict = PyDict_New();
+
+	PyObject *value = PyString_FromString(filename);
+	PyDict_SetItemString(spool_dict, "spooler_task_name", value);
+	Py_DECREF(value);
+
+	if (uwsgi_hooked_parse(buf, len, uwsgi_python_add_item, spool_dict))
+		return NULL;
+
+	if (body && body_len > 0) {
+		PyObject *value = PyString_FromStringAndSize(body, body_len);
+		PyDict_SetItemString(spool_dict, "body", value);
+		Py_DECREF(value);
+	}
+
+	return spool_dict;
+}
+
 int uwsgi_python_spooler(char *filename, char *buf, uint16_t len, char *body, size_t body_len) {
 
 	static int random_seed_reset = 0;
@@ -1685,25 +1712,17 @@ int uwsgi_python_spooler(char *filename, char *buf, uint16_t len, char *body, si
 	}
 
 	int retval = -1;
-	PyObject *spool_dict = PyDict_New();
 	PyObject *pyargs = PyTuple_New(1);
 	PyObject *ret = NULL;
 
-	PyObject *value = PyString_FromString(filename);
-	PyDict_SetItemString(spool_dict, "spooler_task_name", value);
-	Py_DECREF(value);
-
-	if (uwsgi_hooked_parse(buf, len, uwsgi_python_add_item, spool_dict)) {
-		// malformed packet, destroy it
+	PyObject *spool_dict = uwsgi_python_dict_from_spooler_content(filename, buf, len, body, body_len);
+	if (!spool_dict) {
 		retval = -2;
 		goto clear;
 	}
 
-	if (body && body_len > 0) {
-		PyObject *value = PyString_FromStringAndSize(body, body_len);
-		PyDict_SetItemString(spool_dict, "body", value);
-		Py_DECREF(value);
-	}
+	// PyTuple_SetItem steals a reference !!!
+	Py_INCREF(spool_dict);
 	PyTuple_SetItem(pyargs, 0, spool_dict);
 
 	ret = python_call(spool_func, pyargs, 0, NULL);
@@ -1819,6 +1838,20 @@ int uwsgi_python_mule(char *opt) {
 		UWSGI_RELEASE_GIL;
 		return 1;
 	}
+    else if (strchr(opt, ':')) {
+        UWSGI_GET_GIL;
+        PyObject *result = NULL;
+        PyObject *arglist = Py_BuildValue("()");
+        PyObject *callable = up.loaders[LOADER_MOUNT](opt);
+        if (callable) {
+            result = PyEval_CallObject(callable, arglist);
+        }
+        Py_XDECREF(result);
+        Py_XDECREF(arglist);
+        Py_XDECREF(callable);
+        UWSGI_RELEASE_GIL;
+        return 1;
+    }
 	
 	return 0;
 	
@@ -1927,6 +1960,19 @@ static void uwsgi_python_on_load() {
 	uwsgi_register_logger("python", uwsgi_python_logger);
 }
 
+static int uwsgi_python_worker() {
+	if (!up.worker_override)
+		return 0;
+	UWSGI_GET_GIL;
+	FILE *pyfile = fopen(up.worker_override, "r");
+	if (!pyfile) {
+		uwsgi_error_open(up.worker_override);
+		exit(1);
+	}
+	PyRun_SimpleFile(pyfile, up.worker_override);
+	return 1;
+}
+
 struct uwsgi_plugin python_plugin = {
 	.name = "python",
 	.alias = "python",
@@ -1978,5 +2024,6 @@ struct uwsgi_plugin python_plugin = {
 	.exception_log = uwsgi_python_exception_log,
 	.backtrace = uwsgi_python_backtrace,
 
+	.worker = uwsgi_python_worker,
 
 };

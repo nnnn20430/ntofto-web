@@ -1,13 +1,13 @@
 import os
 
-NAME='alarm_speech'
+NAME = 'alarm_speech'
 
 uwsgi_os = os.uname()[0]
 
 LDFLAGS = []
 if uwsgi_os == "Darwin":
     CFLAGS = []
-    LIBS = ['-framework appkit']
+    LIBS = ['-framework AppKit']
 else:
     CFLAGS = ['-I /usr/include/GNUstep']
     LIBS = []

@@ -242,7 +242,6 @@ static void uwsgi_cache_add_items(struct uwsgi_cache *uc) {
                                 goto next;
                         }
                         key = space+1;
-                        key_len = usl->len - ((space-usl->value)+1);
                 }
 		char *value = strchr(key, '=');
 		if (!value) {
@@ -502,7 +501,7 @@ cycle:
 		if (rounds > uc->max_items) {
 			uwsgi_log("ALARM !!! cache-loop (and potential deadlock) detected slot = %lu prev = %lu next = %lu\n", slot, uci->prev, uci->next);
 			// terrible case: the whole uWSGI stack can deadlock, leaving only the master alive
-			// if the master is avalable, trigger a brutal reload
+			// if the master is available, trigger a brutal reload
 			if (uwsgi.master_process) {
 				kill(uwsgi.workers[0].pid, SIGTERM);
 			}
@@ -836,7 +835,7 @@ int uwsgi_cache_set2(struct uwsgi_cache *uc, char *key, uint16_t keylen, char *v
 			}
 		}
 
-		// set this as late as possibile (to reduce races risk)
+		// set this as late as possible (to reduce races risk)
 
 		uci->valsize = vallen;
 		uci->keysize = keylen;
@@ -2042,7 +2041,7 @@ void uwsgi_cache_sync_from_nodes(struct uwsgi_cache *uc) {
 
 		struct uwsgi_buffer *ub = uwsgi_buffer_new(uwsgi.page_size + uc->filesize);
 		ub->pos = 4;
-		if (uwsgi_buffer_append(ub, uc->name, uc->name_len)) {
+		if (uc->name && uwsgi_buffer_append(ub, uc->name, uc->name_len)) {
 			uwsgi_buffer_destroy(ub);
 			close(fd);
 			goto next;

@@ -291,8 +291,8 @@ void logto(char *logfile) {
 		uwsgi.logfile = logfile;
 
 		if (uwsgi.chmod_logfile_value) {
-			if (chmod(uwsgi.logfile, uwsgi.chmod_logfile_value)) {
-				uwsgi_error("chmod()");
+			if (fchmod(fd, uwsgi.chmod_logfile_value)) {
+				uwsgi_error("fchmod()");
 			}
 		}
 	}
@@ -349,7 +349,7 @@ void uwsgi_setup_log() {
 
 }
 
-static struct uwsgi_logger *setup_choosen_logger(struct uwsgi_string_list *usl) {
+static struct uwsgi_logger *setup_chosen_logger(struct uwsgi_string_list *usl) {
 	char *id = NULL;
 	char *name = usl->value;
 
@@ -374,43 +374,43 @@ static struct uwsgi_logger *setup_choosen_logger(struct uwsgi_string_list *usl) 
 		*colon = 0;
 	}
 
-	struct uwsgi_logger *choosen_logger = uwsgi_get_logger(name);
-	if (!choosen_logger) {
-		uwsgi_log("unable to find logger %s\n", name);
+	struct uwsgi_logger *chosen_logger = uwsgi_get_logger(name);
+	if (!chosen_logger) {
+		uwsgi_log("unable to find logger '%s'\n", name);
 		exit(1);
 	}
 
 	// make a copy of the logger
-	struct uwsgi_logger *copy_of_choosen_logger = uwsgi_malloc(sizeof(struct uwsgi_logger));
-	memcpy(copy_of_choosen_logger, choosen_logger, sizeof(struct uwsgi_logger));
-	choosen_logger = copy_of_choosen_logger;
-	choosen_logger->id = id;
-	choosen_logger->next = NULL;
+	struct uwsgi_logger *copy_of_chosen_logger = uwsgi_malloc(sizeof(struct uwsgi_logger));
+	memcpy(copy_of_chosen_logger, chosen_logger, sizeof(struct uwsgi_logger));
+	chosen_logger = copy_of_chosen_logger;
+	chosen_logger->id = id;
+	chosen_logger->next = NULL;
 
 	if (colon) {
-		choosen_logger->arg = colon + 1;
+		chosen_logger->arg = colon + 1;
 		// check for empty string
-		if (*choosen_logger->arg == 0) {
-			choosen_logger->arg = NULL;
+		if (*chosen_logger->arg == 0) {
+			chosen_logger->arg = NULL;
 		}
 		*colon = ':';
 	}
-	return choosen_logger;
+	return chosen_logger;
 }
 
 void uwsgi_setup_log_master(void) {
 
 	struct uwsgi_string_list *usl = uwsgi.requested_logger;
 	while (usl) {
-		struct uwsgi_logger *choosen_logger = setup_choosen_logger(usl);
-		uwsgi_append_logger(choosen_logger);
+		struct uwsgi_logger *chosen_logger = setup_chosen_logger(usl);
+		uwsgi_append_logger(chosen_logger);
 		usl = usl->next;
 	}
 
 	usl = uwsgi.requested_req_logger;
 	while (usl) {
-                struct uwsgi_logger *choosen_logger = setup_choosen_logger(usl);
-                uwsgi_append_req_logger(choosen_logger);
+                struct uwsgi_logger *chosen_logger = setup_chosen_logger(usl);
+                uwsgi_append_req_logger(chosen_logger);
                 usl = usl->next;
         }
 
@@ -483,13 +483,26 @@ void uwsgi_check_logrotate(void) {
 	int need_rotation = 0;
 	int need_reopen = 0;
 	off_t logsize;
+	int logfd;
+	struct stat logstat;
 
 	if (uwsgi.log_master) {
-		logsize = lseek(uwsgi.original_log_fd, 0, SEEK_CUR);
+		logfd = uwsgi.original_log_fd;
 	}
 	else {
-		logsize = lseek(2, 0, SEEK_CUR);
+		logfd = 2;
 	}
+
+	if (fstat(logfd, &logstat) < 0) {
+		uwsgi_error("uwsgi_check_logrotate()/fstat()");
+		return;
+	}
+
+	if (logstat.st_mode & S_IFIFO) {
+		return;
+	}
+
+	logsize = lseek(logfd, 0, SEEK_CUR);
 	if (logsize < 0) {
 		uwsgi_error("uwsgi_check_logrotate()/lseek()");
 		return;
@@ -748,10 +761,11 @@ void get_memusage(uint64_t * rss, uint64_t * vsz) {
 		i = fscanf(procfile, "%*s %*s %*s %*s %*s %*s %*s %*s %*s %*s %*s %*s %*s %*s %*s %*s %*s %*s %*s %*s %*s %*s %llu %lld", (unsigned long long *) vsz, (unsigned long long *) rss);
 		if (i != 2) {
 			uwsgi_log("warning: invalid record in /proc/self/stat\n");
+		} else {
+			*rss = *rss * uwsgi.page_size;
 		}
 		fclose(procfile);
 	}
-	*rss = *rss * uwsgi.page_size;
 #elif defined(__CYGWIN__)
 	// same as Linux but rss is not in pages...
 	FILE *procfile;
@@ -1511,6 +1525,7 @@ static void *logger_thread_loop(void *noarg) {
         if (uwsgi.req_log_master) {
                 logpoll[1].events = POLLIN;
                 logpoll[1].fd = uwsgi.shared->worker_req_log_pipe[0];
+		logpolls++;
         }
 
 
@@ -1547,6 +1562,19 @@ void uwsgi_threaded_logger_spawn() {
                 	event_queue_add_fd_read(uwsgi.master_queue, uwsgi.shared->worker_req_log_pipe[0]);
                 }
                 uwsgi.threaded_logger = 0;
+	}
+}
+
+void uwsgi_threaded_logger_worker_spawn() {
+	pthread_t logger_thread;
+
+        pthread_mutex_init(&uwsgi.threaded_logger_lock, NULL);
+
+	uwsgi.log_master_buf = uwsgi_malloc(uwsgi.log_master_bufsize);
+
+        if (pthread_create(&logger_thread, NULL, logger_thread_loop, NULL)) {
+                uwsgi_error_safe("uwsgi_threaded_logger_worker_spawn()/pthread_create()");
+		exit(1);
 	}
 }
 

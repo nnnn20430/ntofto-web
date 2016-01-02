@@ -6,9 +6,9 @@ cd "$SERVER_ROOT"
 #variables
 COMMAND_ARRAY=(
 	"find nginxprefix/servers -mindepth 1 -not -name nginx_server_sockets -delete; ./server/bin/nginx/nginx -p ${PWD}/nginxprefix/ -g 'daemon off;'"
-	"./server/bin/uwsgi/uwsgi --chdir ${PWD}/nginxprefix/ -s $PWD/nginxprefix/handlers/uwsgi  --ini ${PWD}/server/uwsgi.ini"
-	"PHP_FCGI_CHILDREN=1 ./server/bin/php/php-cgi -b $PWD/nginxprefix/handlers/php-fastcgi -c $PWD/server/php.ini"
-	"PHP_FCGI_CHILDREN=1 ./server/bin/php/php-cgi -b 0.0.0.0:9000 -c $PWD/server/php.ini"
+	"UWSGI_MASTER=1 UWSGI_WORKERS=1 ./server/bin/uwsgi/uwsgi --chdir ${PWD}/nginxprefix/ -s ${PWD}/nginxprefix/handlers/uwsgi --ini ${PWD}/server/uwsgi.ini"
+	"PHP_FCGI_CHILDREN=1 ./server/bin/php/php-cgi -b ${PWD}/nginxprefix/handlers/php-fastcgi -c ${PWD}/server/php.ini"
+	"./server/bin/php/php-fpm -c ${PWD}/server/php.ini -p ${PWD}/nginxprefix -y ${PWD}/server/php-fpm.conf -FR"
 	"./server/bin/fossil/fossil server --scgi --localhost --port 9003 --repolist \"${PWD}/nginxprefix/html/fossil/root\""
 	"./server/bin/git/git-daemon --port=9418 --base-path=\"${PWD}/nginxprefix/html/gitweb/root\" --export-all"
 	"./server/bin/mysql/src/sql/mysqld --defaults-file=${PWD}/server/bin/mysql/etc/my.cnf --user root -r ${PWD}/server/bin/mysql -b / --lc-messages-dir /src/sql/share"

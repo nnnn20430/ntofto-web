@@ -16,11 +16,11 @@ int uwsgi_cr_map_use_cache(struct uwsgi_corerouter *ucr, struct corerouter_peer 
 	peer->tmp_socket_name = uwsgi_concat2n(value, peer->instance_address_len, "", 0);
 	size_t nodes = uwsgi_str_occurence(peer->tmp_socket_name, peer->instance_address_len, '|');
 	if (nodes > 0) {
-		size_t choosen_node = hits % (nodes+1);
-		size_t choosen_node_len = 0;
-		peer->instance_address = uwsgi_str_split_nget(peer->tmp_socket_name, peer->instance_address_len, '|', choosen_node, &choosen_node_len);
+		size_t chosen_node = hits % (nodes+1);
+		size_t chosen_node_len = 0;
+		peer->instance_address = uwsgi_str_split_nget(peer->tmp_socket_name, peer->instance_address_len, '|', chosen_node, &chosen_node_len);
 		if (!peer->instance_address) goto end;
-		peer->instance_address_len = choosen_node_len;
+		peer->instance_address_len = chosen_node_len;
 	}
 	else {
 		peer->instance_address = peer->tmp_socket_name;
@@ -54,12 +54,21 @@ int uwsgi_cr_map_use_subscription(struct uwsgi_corerouter *ucr, struct coreroute
 	usc.cookie = NULL;
 
 	peer->un = uwsgi_get_subscribe_node(ucr->subscriptions, peer->key, peer->key_len, &usc);
-	if (peer->un && peer->un->len) {
-		peer->instance_address = peer->un->name;
-		peer->instance_address_len = peer->un->len;
+	// check if the node is ready or it requires a vassal spawn
+	if (peer->un && (peer->un->len || peer->un->vassal_len)) {
 		peer->modifier1 = peer->un->modifier1;
 		peer->modifier2 = peer->un->modifier2;
 		peer->proto = peer->un->proto;
+		if (peer->un->len) {
+			peer->instance_address = peer->un->name;
+			peer->instance_address_len = peer->un->len;
+		}
+		else if (peer->un->vassal_len) {
+			peer->vassal = peer->un->vassal;
+			peer->vassal_len = peer->un->vassal_len;
+			corerouter_spawn_vassal(ucr, peer->un, peer->retries+1);
+                        peer->defer_connect = 1;
+		}
 	}
 	else if (ucr->cheap && !ucr->i_am_cheap && uwsgi_no_subscriptions(ucr->subscriptions)) {
 		uwsgi_gateway_go_cheap(ucr->name, ucr->queue, &ucr->i_am_cheap);

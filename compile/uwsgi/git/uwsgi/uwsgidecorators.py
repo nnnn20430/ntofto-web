@@ -4,7 +4,7 @@ from threading import Thread
 
 try:
     import cPickle as pickle
-except:
+except ImportError:
     import pickle
 
 import uwsgi
@@ -119,7 +119,7 @@ class _spoolraw(object):
         return self.__class__.__call__(self, *args, **kwargs)
 
     def __init__(self, f, pass_arguments):
-        if not 'spooler' in uwsgi.opt:
+        if 'spooler' not in uwsgi.opt:
             raise Exception(
                 "you have to enable the uWSGI spooler to use @%s decorator" % self.__class__.__name__)
         self.f = f
@@ -246,7 +246,7 @@ class mule_brain(object):
         if uwsgi.mule_id() == self.num:
             try:
                 self.f()
-            except:
+            except BaseException:
                 exc = sys.exc_info()
                 sys.excepthook(exc[0], exc[1], exc[2])
                 sys.exit(1)
@@ -259,7 +259,7 @@ class mule_brainloop(mule_brain):
             while True:
                 try:
                     self.f()
-                except:
+                except BaseException:
                     exc = sys.exc_info()
                     sys.excepthook(exc[0], exc[1], exc[2])
                     sys.exit(1)

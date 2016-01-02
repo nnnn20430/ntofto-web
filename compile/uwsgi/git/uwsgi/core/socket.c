@@ -712,6 +712,11 @@ int bind_to_tcp(char *socket_name, int listen_queue, char *tcp_port) {
 
 	if (uwsgi.tcp_fast_open) {
 #ifdef TCP_FASTOPEN
+
+    #ifndef SOL_TCP
+    #define SOL_TCP IPPROTO_TCP
+    #endif
+
 		if (setsockopt(serverfd, SOL_TCP, TCP_FASTOPEN, (const void *) &uwsgi.tcp_fast_open, sizeof(int)) < 0) {
 			uwsgi_error("TCP_FASTOPEN setsockopt()");
 		}
@@ -883,7 +888,7 @@ int timed_connect(struct pollfd *fdpoll, const struct sockaddr *addr, int addr_s
 				uwsgi_error("poll()");
 				return -1;
 			}
-			/* something hapened on the socket ... */
+			/* something happened on the socket ... */
 			else if (cnt > 0) {
 				if (getsockopt(fdpoll->fd, SOL_SOCKET, SO_ERROR, (void *) (&soopt), &solen) < 0) {
 					uwsgi_error("getsockopt()");
@@ -1171,7 +1176,7 @@ void uwsgi_add_socket_from_fd(struct uwsgi_socket *uwsgi_sock, int fd) {
 							}
 						}
 						else {
-							match = strcmp(computed_addr, uwsgi_sock->name);
+							match = uwsgi_socket_strcmp(computed_addr, uwsgi_sock->name);
 						}
 					}
 					if (!match) {
@@ -1251,10 +1256,20 @@ void uwsgi_add_socket_from_fd(struct uwsgi_socket *uwsgi_sock, int fd) {
 }
 
 void uwsgi_close_all_sockets() {
+        struct uwsgi_socket *uwsgi_sock = uwsgi.sockets;
+
+        while (uwsgi_sock) {
+                if (uwsgi_sock->bound)
+                        close(uwsgi_sock->fd);
+                uwsgi_sock = uwsgi_sock->next;
+        }
+}
+
+void uwsgi_close_all_unshared_sockets() {
 	struct uwsgi_socket *uwsgi_sock = uwsgi.sockets;
 
 	while (uwsgi_sock) {
-		if (uwsgi_sock->bound)
+		if (uwsgi_sock->bound && !uwsgi_sock->shared)
 			close(uwsgi_sock->fd);
 		uwsgi_sock = uwsgi_sock->next;
 	}

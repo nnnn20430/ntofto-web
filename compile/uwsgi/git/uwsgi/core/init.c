@@ -62,6 +62,7 @@ void uwsgi_init_default() {
 
 	uwsgi.cpus = 1;
 	uwsgi.new_argc = -1;
+	uwsgi.binary_argc = 1;
 
 	uwsgi.backtrace_depth = 64;
 	uwsgi.max_apps = 64;
@@ -111,6 +112,7 @@ void uwsgi_init_default() {
 	uwsgi.listen_queue = 100;
 
 	uwsgi.cheaper_overload = 3;
+	uwsgi.cheaper_idle = 10;
 
 	uwsgi.log_master_bufsize = 8192;
 
@@ -260,11 +262,33 @@ void uwsgi_commandline_config() {
 	int argc = uwsgi.argc;
 	char **argv = uwsgi.argv;
 
+	// we might want to ignore some arguments not meant for us
+	char binary_argv0_pretty[256] = {'\0'};
+	char *binary_argv0_actual = NULL;
+
 	if (uwsgi.new_argc > -1 && uwsgi.new_argv) {
 		argc = uwsgi.new_argc;
 		argv = uwsgi.new_argv;
 	}
 
+	if (uwsgi.binary_argc > 1 && argc >= uwsgi.binary_argc) {
+		char *pretty = (char *)binary_argv0_pretty;
+		strncat(pretty, argv[0], 255);
+
+		for (i = 1; i < uwsgi.binary_argc; i++) {
+			if (strlen(pretty) + 1 + strlen(argv[i]) + 1 > 256)
+				break;
+
+			strcat(pretty, " ");
+			strcat(pretty, argv[i]);
+		}
+
+		argc -= uwsgi.binary_argc - 1;
+		argv += uwsgi.binary_argc - 1;
+
+		binary_argv0_actual = argv[0];
+		argv[0] = (char *)binary_argv0_pretty;
+	}
 
 	char *optname;
 	while ((i = getopt_long(argc, argv, uwsgi.short_options, uwsgi.long_options, &uwsgi.option_index)) != -1) {
@@ -288,6 +312,8 @@ void uwsgi_commandline_config() {
 		add_exported_option(optname, optarg, 0);
 	}
 
+	if (binary_argv0_actual != NULL)
+		argv[0] = binary_argv0_actual;
 
 #ifdef UWSGI_DEBUG
 	uwsgi_log("optind:%d argc:%d\n", optind, uwsgi.argc);
@@ -412,7 +438,8 @@ pid_t uwsgi_daemonize2() {
 		uwsgi_write_pidfile(uwsgi.pidfile2);
 	}
 
-	if (uwsgi.log_master) uwsgi_setup_log_master();
+	if (uwsgi.log_master) 
+		uwsgi_setup_log_master();
 
 	return uwsgi.mypid;
 }
@@ -482,6 +509,10 @@ void sanitize_args() {
 	if ( uwsgi.cheaper_rss_limit_hard && uwsgi.cheaper_rss_limit_hard <= uwsgi.cheaper_rss_limit_soft) {
 		uwsgi_log("cheaper-rss-limit-hard value must be higher than cheaper-rss-limit-soft value\n");
 		exit(1);
+	}
+
+	if (uwsgi.evil_reload_on_rss || uwsgi.evil_reload_on_as) {
+		if (!uwsgi.mem_collector_freq) uwsgi.mem_collector_freq = 3;
 	}
 
 	/* here we try to choose if thunder lock is a good thing */

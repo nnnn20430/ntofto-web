@@ -25,6 +25,7 @@ void uwsgi_imperial_monitor_amqp_event(struct uwsgi_emperor_scanner *ues) {
 		uwsgi_log("problem with RabbitMQ server, trying reconnection...\n");
 		close(ues->fd);
 		ues->fd = -1;
+		free(amqp_routing_key);
 		return;
 	}
 
@@ -66,7 +67,7 @@ end0:
 
 	ui_current = emperor_get(config_file);
 
-	// if non-http check for file existance
+	// if non-http check for file existence
 	if (strncmp(config_file, "http://", 7)) {
 		if (stat(config_file, &st)) {
 			free(config_file);

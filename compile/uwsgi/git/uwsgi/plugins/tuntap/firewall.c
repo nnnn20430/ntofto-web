@@ -189,6 +189,7 @@ void uwsgi_tuntap_opt_firewall(char *opt, char *value, void *direction) {
 	char *space2 = strchr(space + 1, ' ');
 	if (!space2) {
 		uwsgi_log("invalid tuntap firewall rule syntax. must be <action> <src/mask> <dst/mask>");
+                return;
 	}
 
 	*space2 = 0;
@@ -375,7 +376,6 @@ void uwsgi_tuntap_peer_send_rules(int fd, struct uwsgi_tuntap_peer *peer) {
                         	exit(1);
                 	}
 			*colon = ':';
-			utpr.target = utpr.target;
 			utpr.target_port = htons(atoi(colon+1));
 		}
 

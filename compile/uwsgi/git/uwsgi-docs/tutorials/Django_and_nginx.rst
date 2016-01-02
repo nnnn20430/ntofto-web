@@ -8,7 +8,7 @@ server. It takes you through the steps required to set up Django so that it
 works nicely with uWSGI and nginx. It covers all three components, providing a
 complete stack of web application and server software.
 
-Django_ Django is a high-level Python Web framework that encourages rapid development and clean, pragmatic design.
+Django_ is a high-level Python Web framework that encourages rapid development and clean, pragmatic design.
 
 .. _Django: http://djangoproject.com/
 
@@ -493,9 +493,11 @@ Make uWSGI startup when the system boots
 
 The last step is to make it all happen automatically at system startup time.
 
+For many systems, the easiest (if not the best) way to do this is to use the ``rc.local`` file.
+
 Edit ``/etc/rc.local`` and add::
 
-    /usr/local/bin/uwsgi --emperor /etc/uwsgi/vassals --uid www-data --gid www-data
+    /usr/local/bin/uwsgi --emperor /etc/uwsgi/vassals --uid www-data --gid www-data --daemonize /var/log/uwsgi-emperor.log
 
 before the line "exit 0".
 
@@ -518,8 +520,9 @@ General configuration of nginx is not within the scope of this tutorial though
 you'll probably want it to listen on port 80, not 8000, for a production
 website.
 
-You also ought to consider at having a separate server for non-Django
-serving, of static files for example.
+You should also configure a separate nginx location block for serving non-Django
+files. For example, it's inefficient to serve static files via uWSGI. Instead, 
+serve them directly from Nginx and completely bypass uWSGI.
 
 uWSGI
 ^^^^^

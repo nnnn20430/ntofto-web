@@ -6,7 +6,15 @@ get build-essentials
 
 for nginx:
 go inside nginx folder open terminal and type:
-$ ./configure --with-http_ssl_module --with-ipv6
+$ ./configure --with-http_ssl_module --with-ipv6 \
+ --with-http_realip_module \
+ --with-http_addition_module \
+ --with-http_sub_module \
+ --with-http_dav_module \
+ --with-http_gunzip_module \
+ --with-http_slice_module \
+ --with-stream \
+ --with-stream_ssl_module
 $ make
 
 go inside objs folder and copy nginx binary and ngx_modules.o

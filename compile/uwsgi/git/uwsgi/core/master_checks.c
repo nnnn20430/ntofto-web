@@ -39,6 +39,8 @@ int uwsgi_master_check_reload(char **argv) {
 
 // check for chain reload
 void uwsgi_master_check_chain() {
+	static time_t last_check = 0;
+
 	if (!uwsgi.status.chain_reloading) return;
 
 	// we need to ensure the previous worker (if alive) is accepting new requests
@@ -49,7 +51,11 @@ void uwsgi_master_check_chain() {
 		if (previous_worker->pid > 0 && !previous_worker->cheaped) {
 			// the worker has been respawned but it is still not ready
 			if (previous_worker->accepting == 0) {
-				uwsgi_log_verbose("chain is still waiting for worker %d...\n", uwsgi.status.chain_reloading-1);
+				time_t now = uwsgi_now();
+				if (now != last_check) {
+					uwsgi_log_verbose("chain is still waiting for worker %d...\n", uwsgi.status.chain_reloading-1);
+					last_check = now;
+				}
 				return;
 			}
 		}
@@ -117,7 +123,7 @@ void uwsgi_master_check_idle() {
 		last_request_timecheck = uwsgi.current_time;
 		last_request_count = uwsgi.workers[0].requests;
 	}
-	// a bit of over-engeneering to avoid clock skews
+	// a bit of over-engineering to avoid clock skews
 	else if (last_request_timecheck < uwsgi.current_time && (uwsgi.current_time - last_request_timecheck > uwsgi.idle)) {
 		uwsgi_log("workers have been inactive for more than %d seconds (%llu-%llu)\n", uwsgi.idle, (unsigned long long) uwsgi.current_time, (unsigned long long) last_request_timecheck);
 		uwsgi.status.is_cheap = 1;
@@ -140,7 +146,7 @@ void uwsgi_master_check_idle() {
 				continue;
 			// first send SIGINT
 			kill(uwsgi.workers[i].pid, SIGINT);
-			// and start waiting upto 3 seconds
+			// and start waiting up to 3 seconds
 			int j;
 			for(j=0;j<3;j++) {
 				sleep(1);
@@ -302,9 +308,15 @@ int uwsgi_master_check_spoolers_death(int diedpid) {
 	struct uwsgi_spooler *uspool = uwsgi.spoolers;
 	while (uspool) {
 		if (uspool->pid > 0 && diedpid == uspool->pid) {
-			uwsgi_log("OOOPS the spooler is no more...trying respawn...\n");
-			uspool->respawned++;
-			uspool->pid = spooler_start(uspool);
+			if (uwsgi.spooler_cheap) {
+				uwsgi_log_verbose("spooler %s ended\n", uspool->dir);
+				uspool->pid = 0;
+			}
+			else {
+				uwsgi_log("OOOPS the spooler is no more...trying respawn...\n");
+				uspool->respawned++;
+				uspool->pid = spooler_start(uspool);
+			}
 			return -1;
 		}
 		uspool = uspool->next;

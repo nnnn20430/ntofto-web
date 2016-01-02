@@ -493,7 +493,7 @@ done:
 		r = r->next;
 	}
 
-	uwsgi_log("unable to register route \"%s\"\n", value);
+	uwsgi_log("unable to register route \"%s\". Missing router for: \"%s\"\n", value, command);
 	exit(1);
 }
 
@@ -753,6 +753,27 @@ static int uwsgi_router_fixcl_func(struct wsgi_request *wsgi_req, struct uwsgi_r
 }
 static int uwsgi_router_fixcl(struct uwsgi_route *ur, char *arg) {
         ur->func = uwsgi_router_fixcl_func;
+        return 0;
+}
+
+// force content length
+static int transform_forcecl(struct wsgi_request *wsgi_req, struct uwsgi_transformation *ut) {
+        char buf[sizeof(UMAX64_STR)+1];
+        int ret = snprintf(buf, sizeof(UMAX64_STR)+1, "%llu", (unsigned long long) ut->chunk->pos);
+        if (ret <= 0 || ret >= (int) (sizeof(UMAX64_STR)+1)) {
+                wsgi_req->write_errors++;
+                return -1;
+        }
+        // do not check for errors !!!
+        uwsgi_response_add_header_force(wsgi_req, "Content-Length", 14, buf, ret);
+        return 0;
+}
+static int uwsgi_router_forcecl_func(struct wsgi_request *wsgi_req, struct uwsgi_route *route) {
+        uwsgi_add_transformation(wsgi_req, transform_forcecl, NULL);
+        return UWSGI_ROUTE_NEXT;
+}
+static int uwsgi_router_forcecl(struct uwsgi_route *ur, char *arg) {
+        ur->func = uwsgi_router_forcecl_func;
         return 0;
 }
 
@@ -1193,6 +1214,27 @@ static int uwsgi_router_setpathinfo(struct uwsgi_route *ur, char *arg) {
         ur->data_len = strlen(arg);
         return 0;
 }
+
+// fixpathinfo route
+static int uwsgi_router_fixpathinfo_func(struct wsgi_request *wsgi_req, struct uwsgi_route *ur) {
+	if (wsgi_req->script_name_len == 0)
+		return UWSGI_ROUTE_NEXT;
+
+        char *ptr = uwsgi_req_append(wsgi_req, "PATH_INFO", 9, wsgi_req->path_info+wsgi_req->script_name_len, wsgi_req->path_info_len - wsgi_req->script_name_len);
+        if (!ptr) {
+                return UWSGI_ROUTE_BREAK;
+        }
+        wsgi_req->path_info = wsgi_req->path_info+wsgi_req->script_name_len;
+        wsgi_req->path_info_len = wsgi_req->path_info_len - wsgi_req->script_name_len;
+        return UWSGI_ROUTE_NEXT;
+}
+static int uwsgi_router_fixpathinfo(struct uwsgi_route *ur, char *arg) {
+        ur->func = uwsgi_router_fixpathinfo_func;
+        ur->data = arg;
+        ur->data_len = strlen(arg);
+        return 0;
+}
+
 
 // setscheme route
 static int uwsgi_router_setscheme_func(struct wsgi_request *wsgi_req, struct uwsgi_route *ur) {
@@ -1757,6 +1799,10 @@ static char *uwsgi_route_var_uwsgi(struct wsgi_request *wsgi_req, char *key, uin
                 ret = uwsgi_64bit2str(wsgi_req->response_size);
                 *vallen = strlen(ret);
         }
+	else if (!uwsgi_strncmp(key, keylen, "sor", 3)) {
+                ret = uwsgi_64bit2str(wsgi_req->start_of_request);
+                *vallen = strlen(ret);
+        }
 
 	return ret;
 }
@@ -1793,6 +1839,10 @@ static char *uwsgi_route_var_time(struct wsgi_request *wsgi_req, char *key, uint
                 ret = uwsgi_num2str(uwsgi_now());
                 *vallen = strlen(ret);
         }
+	else if (!uwsgi_strncmp(key, keylen, "micros", 6)) {
+		ret = uwsgi_64bit2str(uwsgi_micros());
+                *vallen = strlen(ret);
+	}
         return ret;
 }
 
@@ -1817,6 +1867,32 @@ static char *uwsgi_route_var_hex(struct wsgi_request *wsgi_req, char *key, uint1
                 *vallen = var_vallen*2;
         }
         return ret;
+}
+
+static char *uwsgi_route_var_upper(struct wsgi_request *wsgi_req, char *key, uint16_t keylen, uint16_t *vallen) {
+    char *ret = NULL;
+    char *var_value = uwsgi_get_var(wsgi_req, key, keylen, vallen);
+    if (var_value) {
+        ret = uwsgi_malloc((size_t) *vallen);
+        size_t i;
+        for (i = 0; i < *vallen; i++) {
+            ret[i] = toupper((int) var_value[i]);
+        }
+    }
+    return ret;
+}
+
+static char *uwsgi_route_var_lower(struct wsgi_request *wsgi_req, char *key, uint16_t keylen, uint16_t *vallen) {
+    char *ret = NULL;
+    char *var_value = uwsgi_get_var(wsgi_req, key, keylen, vallen);
+    if (var_value) {
+        ret = uwsgi_malloc((size_t) *vallen);
+        size_t i;
+        for (i = 0; i < *vallen; i++) {
+            ret[i] = tolower((int) var_value[i]);
+        }
+    }
+    return ret;
 }
 
 // register embedded routers
@@ -1850,6 +1926,7 @@ void uwsgi_register_embedded_routers() {
         uwsgi_register_router("seturi", uwsgi_router_seturi);
         uwsgi_register_router("setremoteaddr", uwsgi_router_setremoteaddr);
         uwsgi_register_router("setpathinfo", uwsgi_router_setpathinfo);
+        uwsgi_register_router("fixpathinfo", uwsgi_router_fixpathinfo);
         uwsgi_register_router("setdocroot", uwsgi_router_setdocroot);
         uwsgi_register_router("setscheme", uwsgi_router_setscheme);
         uwsgi_register_router("setprocname", uwsgi_router_setprocname);
@@ -1865,6 +1942,7 @@ void uwsgi_register_embedded_routers() {
 
         uwsgi_register_router("flush", uwsgi_router_flush);
         uwsgi_register_router("fixcl", uwsgi_router_fixcl);
+        uwsgi_register_router("forcecl", uwsgi_router_forcecl);
 
         uwsgi_register_router("harakiri", uwsgi_router_harakiri);
 
@@ -1911,6 +1989,10 @@ void uwsgi_register_embedded_routers() {
 
         urv = uwsgi_register_route_var("hex", uwsgi_route_var_hex);
 	urv->need_free = 1;
+    urv = uwsgi_register_route_var("upper", uwsgi_route_var_upper);
+    urv->need_free = 1;
+    urv = uwsgi_register_route_var("lower", uwsgi_route_var_lower);
+    urv->need_free = 1;
 }
 
 struct uwsgi_router *uwsgi_register_router(char *name, int (*func) (struct uwsgi_route *, char *)) {
@@ -2045,5 +2127,19 @@ next4:
 		usl->custom2 = strlen(space+1);
 		uwsgi_log("collecting header %.*s to var %s\n", usl->custom, usl->value, usl->custom_ptr);
 	}
+
+	uwsgi_foreach(usl, uwsgi.pull_headers) {
+                char *space = strchr(usl->value, ' ');
+                if (!space) {
+                        uwsgi_log("invalid pull header syntax, must be <header> <var>\n");
+                        exit(1);
+                }
+                *space = 0;
+                usl->custom = strlen(usl->value);
+                *space = ' ';
+                usl->custom_ptr = space+1;
+                usl->custom2 = strlen(space+1);
+                uwsgi_log("pulling header %.*s to var %s\n", usl->custom, usl->value, usl->custom_ptr);
+        }
 }
 #endif

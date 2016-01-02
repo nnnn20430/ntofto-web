@@ -23,7 +23,7 @@ On modern systems the following should hold true. On "classic" operating systems
 System         Method
 ============== =========
 Ubuntu         :doc:`Upstart` (the official ``uwsgi`` package, available since Ubuntu 12.04 provides an init.d based solution. Read the README.)
-Debian         :doc:`Upstart`
+Debian         :doc:`Systemd`
 Arch Linux     :doc:`Systemd`
 Fedora         :doc:`Systemd`
 OSX            launchd
@@ -41,9 +41,9 @@ The uWSGI server responds to the following signals.
 ==========  ========================================================================  ===================
 Signal      Description                                                               Convenience command
 ==========  ========================================================================  ===================
-`SIGHUP`    gracefully reload all the workers and the master process                  --reload
-`SIGTERM`   brutally reload all the workers and the master process                    (use --die-on-term to respect the convention of shutting down the instance)
-`SIGINT`    immediately kill the entire uWSGI stack                                   --stop
+`SIGHUP`    gracefully reload all the workers and the master process                  ``--reload``
+`SIGTERM`   brutally reload all the workers and the master process                    (use ``--die-on-term`` to respect the convention of shutting down the instance)
+`SIGINT`    immediately kill the entire uWSGI stack                                   ``--stop``
 `SIGQUIT`   immediately kill the entire uWSGI stack
 `SIGUSR1`   print statistics
 `SIGUSR2`   print worker status or wakeup the spooler

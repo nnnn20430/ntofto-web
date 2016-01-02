@@ -408,7 +408,7 @@ ssize_t uwsgi_append_static_path(char *dir, size_t dir_len, char *file, size_t f
 static int uwsgi_static_stat(struct wsgi_request *wsgi_req, char *filename, size_t *filename_len, struct stat *st, struct uwsgi_string_list **index) {
 
 	int ret = stat(filename, st);
-	// if non-existant return -1
+	// if non-existent return -1
 	if (ret < 0)
 		return -1;
 
@@ -459,29 +459,28 @@ int uwsgi_real_file_serve(struct wsgi_request *wsgi_req, char *real_filename, si
 		}
 	}
 #ifdef UWSGI_DEBUG
-	uwsgi_log("[uwsgi-fileserve] file %s found\n", real_filename);
+	uwsgi_log("[uwsgi-fileserve] file %s found, mimetype %s\n", real_filename, mime_type);
 #endif
 
 	// static file - don't update avg_rt after request
 	wsgi_req->do_not_account_avg_rt = 1;
 
 	size_t fsize = st->st_size;
-        if (wsgi_req->range_to) {
-        	fsize = wsgi_req->range_to - wsgi_req->range_from;
-                if (fsize > (size_t)st->st_size) {
-                	fsize = st->st_size;
-                }
+	// security check
+        if (wsgi_req->range_from > fsize) {
+                wsgi_req->range_from = 0;
+                wsgi_req->range_to = 0;
         }
 	else {
-        	// reset in case of inconsistent size
-        	if (wsgi_req->range_from > fsize) {
-        		wsgi_req->range_from = 0;
-        		fsize = 0;
-        	}
-		else {
-			fsize -= wsgi_req->range_from;
-		}
+		fsize -= wsgi_req->range_from;
 	}
+
+        if (wsgi_req->range_to) {
+        	fsize = (wsgi_req->range_to - wsgi_req->range_from)+1;
+                if (fsize + wsgi_req->range_from > (size_t) (st->st_size)) {
+                	fsize = st->st_size - wsgi_req->range_from;
+                }
+        }
 
 	// HTTP status
 	if (fsize > 0 && (wsgi_req->range_from || wsgi_req->range_to)) {

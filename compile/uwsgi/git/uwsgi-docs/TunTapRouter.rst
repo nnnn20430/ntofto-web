@@ -1,7 +1,7 @@
 The TunTap Router
 =================
 
-The TunTap router is an ad-hoc solution for giving network connectivity to Linux processes running in a dedicated network namespace (well obviously it has other uses, but very probably this is the most interesting one, and the one for which it was developed)
+The TunTap router is an ad-hoc solution for giving network connectivity to Linux processes running in a dedicated network namespace. Well obviously it has other uses, but very probably this is the most interesting one, and the one for which it was developed. Currently it builds only on Linux platforms.
 
 
 The TunTap router is not compiled in by default.
@@ -49,6 +49,9 @@ instructing it to route traffic to the Emperor tuntap unix socket:
 .. code-block:: ini
 
    [uwsgi]
+   ; we need it as the vassal have no way to know it is jailed
+   ; without it post_jail plugin hook would be never executed
+   jailed = true
    ; create uwsgi0 tun interface and force it to connect to the Emperor exposed unix socket
    tuntap-device = uwsgi0 /tmp/tuntap.socket
    ; bring up loopback
