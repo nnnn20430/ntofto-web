@@ -1,8 +1,0 @@
-<!--
-  Copyright (C) Igor Sysoev
-  Copyright (C) Nginx, Inc.
-  -->
-
-<!DOCTYPE error SYSTEM "../dtd/error.dtd">
-
-<error name="404: not found" link="404.html" lang="en" />

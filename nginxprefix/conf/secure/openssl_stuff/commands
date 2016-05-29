@@ -1,0 +1,68 @@
+####################################################################
+#create CA:
+
+$ mkdir -p -m 0700 \
+./CA \
+./CA/certs \
+./CA/crl \
+./CA/newcerts \
+./CA/private
+
+$ touch ./CA/index.txt
+$ echo 1000 >> ./CA/serial
+
+$ openssl req -new -newkey rsa:8192 -x509 -keyout ./CA/private/cakey.pem -out ./CA/cacert.pem -days 3650
+
+####################################################################
+#Create key and certificate request for server use:
+
+$ openssl req -new -newkey rsa:4096 -nodes -out server.csr -keyout server.key
+
+####################################################################
+#Sign certificate request:
+
+$ openssl ca -config ./openssl.cnf -days 1826.21 -out ./server.crt -infiles server.csr
+
+
+
+
+
+####################################################################
+#or sign whitout CA
+
+$ openssl x509 -req -days 1826.21 -in server.csr -signkey ./server.key -out server.crt
+
+
+####################################################################
+#you can make CA by just making root private key and certificate and signing whit this command:
+
+$ openssl x509 -req -days 1826.21 -in server.csr -CA ./CA/cacert.pem -CAkey ./CA/private/cakey.pem -CAcreateserial -out server.crt
+
+
+
+
+
+
+####################################################################
+if you want ECDSA do this:
+
+#for list of curves
+$ openssl ecparam -list_curves
+#generate root ca private key
+$ openssl ecparam -out ec_key.pem -name sect571r1 -genkey
+#create CA certificate
+$ openssl req -new -key ec_key.pem -x509 -nodes -days 3650 -out cert.pem
+
+#generate key for server use
+$ openssl ecparam -out server.key -name sect571r1 -genkey
+#generate certificate request for server use
+$ openssl req -new -key server.key -nodes -days 3650 -out server.csr
+#sign key
+$ openssl x509 -req -days 1826.21 -in server.csr -CA cert.pem -CAkey ec_key.pem -CAcreateserial -out server.crt
+
+
+# USE prime256v1 or secp384r1 for curves if you want it to work whit SSL/TSL
+
+
+#recomended cipher suite
+openssl ciphers 'ALL:!DES-CBC3-SHA:!aNULL:!eNULL:!MEDIUM:!LOW:!kECDH:!DSS:!MD5:!SHA1:!EXP:!PSK:!SRP:!CAMELLIA:!SEED'

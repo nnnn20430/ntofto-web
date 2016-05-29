@@ -1,9 +1,0 @@
-{% extends 'core/project_bar_base.html' %}
-{% load projects_tags %}
-{% load i18n %}
-
-{% block project-breadcrumb %}
-  {% if request.user|is_project_user:project %}
-    <a href="{% url "projects_dashboard" %}">{% trans "Projects" %}</a>&nbsp;&gt;
-  {% endif %}
-{% endblock %}
