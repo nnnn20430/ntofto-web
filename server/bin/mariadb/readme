@@ -1,0 +1,5 @@
+after compiling mariadb from source,
+move entire source directory to this folder and rename it to src.
+
+to create initial db, cd to src folder and run this command
+$ ./scripts/mysql_install_db --srcdir=$PWD --datadir=../data --user=$LOGNAME

@@ -1,20 +1,20 @@
-#Generate RSA private key:
+Generate RSA private key:
 $ openssl genrsa -out server.key 4096
 
 
-#Generate CSR from private key:
+Generate CSR from private key:
 $ openssl req -new -sha256 -key server.key -out server.csr
 
 
-#Sign CSR with private key:
+Sign CSR with private key:
 $ openssl x509 -req -in server.csr -signkey server.key -out server.crt
 
 
-#Generate DH parameters for Perfect Forward Secrecy:
+Generate DH parameters for Perfect Forward Secrecy:
 $ openssl dhparam -outform PEM -out dhparam.pem 2048
 
 
-#To create .pfx or .p12, do this:
+To create .pfx or .p12, do this:
 $ openssl pkcs12 -export -in agent5-cert.pem -inkey agent5-key.pem \
     -certfile ca-cert.pem -out agent5.pfx
 

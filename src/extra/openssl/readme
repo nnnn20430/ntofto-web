@@ -1,2 +1,0 @@
-if when you configure, make and install you cant run openssl and or cant access manual pages try to configure using this command
-$ ./config --prefix=/usr/local --openssldir=/usr/local

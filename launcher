@@ -1,76 +1,119 @@
 #!/bin/bash
 
-SERVER_ROOT=$(cd "${0%/*}" && echo "$PWD")
-cd "$SERVER_ROOT"
+# constants
+declare -r INVOKED_DIR="$PWD"
+declare -r SCRIPT_ROOT=$(cd "${0%/*}" && echo "$PWD")
 
-#variables
-START_INIT_COMMAND="mount -t tmpfs tmpfs -o rw,mode=1777,strictatime ${PWD}/nginxprefix/tmp"
+# variables
+START_INIT_COMMAND="
+mount -t tmpfs tmpfs -o rw,mode=1777,strictatime ${PWD}/nginxprefix/tmp
+find nginxprefix/servers -mindepth 1 -not -name .gitignore -delete
+"
 STOP_CLEANUP_COMMAND="umount -fl ${PWD}/nginxprefix/tmp"
 COMMAND_ARRAY=(
-	"find nginxprefix/servers -mindepth 1 -not -name nginx_server_sockets -delete; ./server/bin/nginx/nginx -p ${PWD}/nginxprefix/ -g 'daemon off;'"
-	"UWSGI_MASTER=1 UWSGI_WORKERS=1 ./server/bin/uwsgi/uwsgi --chdir ${PWD}/nginxprefix/ -s ${PWD}/nginxprefix/handlers/uwsgi --ini ${PWD}/server/uwsgi.ini"
-	"PHP_FCGI_CHILDREN=1 ./server/bin/php/php-cgi -b ${PWD}/nginxprefix/handlers/php-fastcgi -c ${PWD}/server/php.ini"
-	"./server/bin/php/php-fpm -c ${PWD}/server/php.ini -p ${PWD}/nginxprefix -y ${PWD}/server/php-fpm.conf -FR"
-	"./server/bin/fossil/fossil server --scgi --localhost --port 9003 --repolist \"${PWD}/nginxprefix/html/fossil/root\""
-	"./server/bin/git/git-daemon --port=9418 --base-path=\"${PWD}/nginxprefix/html/gitweb/root\" --export-all"
-	"./server/bin/mysql/src/sql/mysqld --defaults-file=${PWD}/server/bin/mysql/etc/my.cnf --user root -r ${PWD}/server/bin/mysql -b / --lc-messages-dir /src/sql/share"
+	"./server/bin/nginx/nginx -p '${PWD}/nginxprefix/' -g 'daemon off;'"
+	"UWSGI_MASTER=1 UWSGI_WORKERS=1 ./server/bin/uwsgi/uwsgi --chdir '${PWD}/nginxprefix/' -s '${PWD}/nginxprefix/handlers/uwsgi' --ini '${PWD}/server/uwsgi.ini'"
+	"PHP_FCGI_CHILDREN=1 ./server/bin/php/php-cgi -b '${PWD}/nginxprefix/handlers/php-fastcgi' -c '${PWD}/server/php.ini'"
+	"./server/bin/php/php-fpm -c '${PWD}/server/php.ini' -p '${PWD}/nginxprefix' -y '${PWD}/server/php-fpm.conf' -FR"
+	"./server/bin/fossil/fossil server --scgi --localhost --port 9003 --repolist '${PWD}/nginxprefix/html/fossil/root'"
+	"./server/bin/git/git-daemon --port=9418 --base-path='${PWD}/nginxprefix/html/gitweb/root' --export-all"
+	"./server/bin/mariadb/src/sql/mysqld --defaults-file='${PWD}/server/bin/mariadb/etc/my.cnf' --user root -r '${PWD}/server/bin/mariadb' -b / --lc-messages-dir /src/sql/share"
 )
 
-signal=""
-quiet=false
+# options
+LAUNCHER_ACTION=""
+LAUNCHER_QUIET=false
 
-opts=$(getopt -o s:q -l signal:,quiet -- "$@")
+opts=$(getopt -o a:q -l action:,quiet -- "$@")
 eval set -- "${opts}"
 for i; do
 	case "$i" in
-		-s) signal="$2"; shift; shift;;
-		--signal) signal="$2"; shift; shift;;
-		-q) quiet=true; shift; shift;;
-		--quiet) quiet=true; shift; shift;;
+		-a) LAUNCHER_ACTION="$2"; shift; shift;;
+		--action) LAUNCHER_ACTION="$2"; shift; shift;;
+		-q) LAUNCHER_QUIET=true; shift;;
+		--quiet) LAUNCHER_QUIET=true; shift;;
 		--) shift; break;
 	esac
 done
 
+print_help() {
+	echo "$0 [-q] -a start|stop"
+}
+
 runInBg() {
-	echo -n $(bash -c "set -m; $* >/dev/null 2>&1 & echo \$!" 2>/dev/null)
+	echo -n $(bash -c "set -m; ( $* ) >/dev/null 2>&1 & echo \$!" 2>/dev/null)
 	disown -a >/dev/null 2>&1
 }
 
+runInBgAlt() {
+	eval set -- "$1"
+	echo -n $(
+		(
+			[[ -t 0 ]] && exec </dev/null
+			[[ -t 1 ]] && exec >/dev/null
+			[[ -t 2 ]] && exec 2>/dev/null
+			trap '' 1 2 
+			eval exec {3..255}\>\&-
+			exec "$@"
+		) >/dev/null 2>&1 &
+		echo -n $!
+	)
+}
+
 service_start() {
-	if test -e "./collected_PID";then
+	if test -e "./.Collected_PID";then
 		echo "Service still running."
 		return
 	fi
-	runInBg "${START_INIT_COMMAND}" >/dev/null
+	eval "${START_INIT_COMMAND}"
 	process_pids=""
 	for ((i = 0; i < ${#COMMAND_ARRAY[@]}; i++)); do
 		process_pids="${process_pids}$(runInBg "${COMMAND_ARRAY[$i]}")"$'\n'
 	done
-	echo -n "${process_pids}" >./collected_PID
+	echo -n "${process_pids}" >./.Collected_PID
 }
 
 service_stop() {
-	if test -e "./collected_PID";then :; else
+	if test -e "./.Collected_PID";then :; else
 		echo "Service is not running."
 		return
 	fi
-	process_pids=$(<./collected_PID)
+	process_pids=$(<./.Collected_PID)
 	for pid in ${process_pids}; do
 		if test -r /proc/"${pid}"/stat; then
-			kill -s SIGKILL -- -"$(awk '{print $5}' < /proc/"${pid}"/stat)" >/dev/null 2>&1
+			kill -s SIGKILL -- -"$(awk '{print $5}' < /proc/"${pid}"/stat)"
 		else
-			kill -s SIGKILL -- "${pid}" >/dev/null 2>&1
+			kill -s SIGKILL -- "${pid}"
 		fi
 	done
-	rm ./collected_PID
-	runInBg "${STOP_CLEANUP_COMMAND}" >/dev/null
+	rm ./.Collected_PID
+	eval "${STOP_CLEANUP_COMMAND}"
 }
 
-if test "$signal" = "start"; then
-	if $quiet; then service_start >/dev/null 2>&1; else service_start; fi
-elif test "$signal" = "stop"; then
-	if $quiet; then service_stop >/dev/null 2>&1; else service_stop; fi
-fi
+main() {
+	cd "$SCRIPT_ROOT"
+	
+	case "${LAUNCHER_ACTION}" in
+		"start")
+			if "${LAUNCHER_QUIET}"; then
+				service_start >/dev/null 2>&1
+			else
+				service_start
+			fi
+			;;
+		"stop")
+			if "${LAUNCHER_QUIET}"; then
+				service_stop >/dev/null 2>&1
+			else
+				service_stop
+			fi
+			;;
+		*)
+			print_help
+			;;
+	esac
+	
+	exit 0
+}
 
-exit 0
-
+main
