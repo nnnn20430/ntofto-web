@@ -6,18 +6,22 @@ declare -r SCRIPT_ROOT=$(cd "${0%/*}" && echo "$PWD")
 
 # variables
 START_INIT_COMMAND="
-mount -t tmpfs tmpfs -o rw,mode=1777,strictatime ${PWD}/nginxprefix/tmp
+mount -t tmpfs tmpfs -o rw,mode=1777,strictatime ${SCRIPT_ROOT}/nginxprefix/tmp
+mount --bind $(realpath ${SCRIPT_ROOT}/builds/mariadb/latest) ${SCRIPT_ROOT}/server/bin/mariadb/src
 find nginxprefix/servers -mindepth 1 -not -name .gitignore -delete
 "
-STOP_CLEANUP_COMMAND="umount -fl ${PWD}/nginxprefix/tmp"
+STOP_CLEANUP_COMMAND="
+umount -fl ${SCRIPT_ROOT}/nginxprefix/tmp
+umount -fl ${SCRIPT_ROOT}/server/bin/mariadb/src
+"
 COMMAND_ARRAY=(
-	"./server/bin/nginx/nginx -p '${PWD}/nginxprefix/' -g 'daemon off;'"
-	"UWSGI_MASTER=1 UWSGI_WORKERS=1 ./server/bin/uwsgi/uwsgi --chdir '${PWD}/nginxprefix/' -s '${PWD}/nginxprefix/handlers/uwsgi' --ini '${PWD}/server/uwsgi.ini'"
-	"PHP_FCGI_CHILDREN=1 ./server/bin/php/php-cgi -b '${PWD}/nginxprefix/handlers/php-fastcgi' -c '${PWD}/server/php.ini'"
-	"./server/bin/php/php-fpm -c '${PWD}/server/php.ini' -p '${PWD}/nginxprefix' -y '${PWD}/server/php-fpm.conf' -FR"
-	"./server/bin/fossil/fossil server --scgi --localhost --port 9003 --repolist '${PWD}/nginxprefix/html/fossil/root'"
-	"./server/bin/git/git-daemon --port=9418 --base-path='${PWD}/nginxprefix/html/gitweb/root' --export-all"
-	"./server/bin/mariadb/src/sql/mysqld --defaults-file='${PWD}/server/bin/mariadb/etc/my.cnf' --user root -r '${PWD}/server/bin/mariadb' -b / --lc-messages-dir /src/sql/share"
+	"./server/bin/nginx/nginx -p '${SCRIPT_ROOT}/nginxprefix/' -g 'daemon off;'"
+	"env UWSGI_MASTER=1 UWSGI_WORKERS=1 ./server/bin/uwsgi/uwsgi --chdir '${SCRIPT_ROOT}/nginxprefix/' -s '${SCRIPT_ROOT}/nginxprefix/handlers/uwsgi' --ini '${SCRIPT_ROOT}/server/uwsgi.ini'"
+	"env PHP_FCGI_CHILDREN=1 ./server/bin/php/php-cgi -b '${SCRIPT_ROOT}/nginxprefix/handlers/php-fastcgi' -c '${SCRIPT_ROOT}/server/php.ini'"
+	"./server/bin/php/php-fpm -c '${SCRIPT_ROOT}/server/php.ini' -p '${SCRIPT_ROOT}/nginxprefix' -y '${SCRIPT_ROOT}/server/php-fpm.conf' -FR"
+	"./server/bin/fossil/fossil server --scgi --localhost --port 9003 --repolist '${SCRIPT_ROOT}/nginxprefix/html/fossil/root'"
+	"./server/bin/git/git-daemon --port=9418 --base-path='${SCRIPT_ROOT}/nginxprefix/html/gitweb/root' --export-all"
+	"./server/bin/mariadb/src/sql/mysqld --defaults-file='${SCRIPT_ROOT}/server/bin/mariadb/etc/my.cnf' --user root -r '${SCRIPT_ROOT}/server/bin/mariadb' -b / --lc-messages-dir /src/sql/share"
 )
 
 # options
@@ -41,22 +45,17 @@ print_help() {
 }
 
 runInBg() {
-	echo -n $(bash -c "set -m; ( $* ) >/dev/null 2>&1 & echo \$!" 2>/dev/null)
-	disown -a >/dev/null 2>&1
-}
-
-runInBgAlt() {
 	eval set -- "$1"
-	echo -n $(
+	echo $(
 		(
 			[[ -t 0 ]] && exec </dev/null
 			[[ -t 1 ]] && exec >/dev/null
 			[[ -t 2 ]] && exec 2>/dev/null
 			trap '' 1 2 
 			eval exec {3..255}\>\&-
-			exec "$@"
+			exec perl -e 'use POSIX;POSIX::setsid();exec @ARGV' -- "$@"
 		) >/dev/null 2>&1 &
-		echo -n $!
+		echo $!
 	)
 }
 
