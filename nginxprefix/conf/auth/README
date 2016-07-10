@@ -1,0 +1,3 @@
+create 'htpasswd' file inside appropriate service directory
+generate password hash using ./pwhash
+write a new(or change existing) $username:$pwhash:$comment line in htpasswd
