@@ -15,13 +15,13 @@ umount -fl ${SCRIPT_ROOT}/server/nginxprefix/tmp
 umount -fl ${SCRIPT_ROOT}/server/mariadb/src
 "
 COMMAND_ARRAY=(
-	"./server/bin/nginx/nginx -p '${SCRIPT_ROOT}/server/nginxprefix/' -g 'daemon off;'"
-	"env UWSGI_MASTER=1 UWSGI_WORKERS=1 ./server/bin/uwsgi/uwsgi --chdir '${SCRIPT_ROOT}/server/nginxprefix/' -s '${SCRIPT_ROOT}/server/nginxprefix/handlers/uwsgi' --ini '${SCRIPT_ROOT}/server/uwsgi.ini'"
-	"env PHP_FCGI_CHILDREN=1 ./server/bin/php/php-cgi -b '${SCRIPT_ROOT}/server/nginxprefix/handlers/php-fastcgi' -c '${SCRIPT_ROOT}/server/php.ini'"
-	"./server/bin/php/php-fpm -c '${SCRIPT_ROOT}/server/php.ini' -p '${SCRIPT_ROOT}/server/nginxprefix' -y '${SCRIPT_ROOT}/server/php-fpm.conf' -FR"
-	"./server/bin/fossil/fossil server --scgi --localhost --port 9003 --repolist '${SCRIPT_ROOT}/server/nginxprefix/html/fossil/root'"
-	"./server/bin/git/git-daemon --port=9418 --base-path='${SCRIPT_ROOT}/server/nginxprefix/html/gitweb/root' --export-all"
-	"./server/bin/mariadb/mysqld --defaults-file='${SCRIPT_ROOT}/server/mariadb/etc/my.cnf' --user root -r '${SCRIPT_ROOT}/server/mariadb' -b / --lc-messages-dir /src/sql/share"
+	"server/bin/nginx -p '${SCRIPT_ROOT}/server/nginxprefix/' -g 'daemon off;'"
+	"env UWSGI_MASTER=1 UWSGI_WORKERS=1 server/bin/uwsgi --chdir '${SCRIPT_ROOT}/server/nginxprefix/' -s '${SCRIPT_ROOT}/server/nginxprefix/handlers/uwsgi' --ini '${SCRIPT_ROOT}/server/etc/uwsgi.ini'"
+	"env PHP_FCGI_CHILDREN=1 server/bin/php-cgi -b '${SCRIPT_ROOT}/server/nginxprefix/handlers/php-fastcgi' -c '${SCRIPT_ROOT}/server/etc/php.ini'"
+	"server/bin/php-fpm -c '${SCRIPT_ROOT}/server/etc/php.ini' -p '${SCRIPT_ROOT}/server/nginxprefix' -y '${SCRIPT_ROOT}/server/etc/php-fpm.conf' -FR"
+	"server/bin/fossil server --scgi --localhost --port 9003 --repolist '${SCRIPT_ROOT}/server/nginxprefix/html/fossil/root'"
+	"server/bin/git-daemon --port=9418 --base-path='${SCRIPT_ROOT}/server/nginxprefix/html/gitweb/root' --export-all"
+	"server/bin/mysqld --defaults-file='${SCRIPT_ROOT}/server/mariadb/etc/my.cnf' --user root -r '${SCRIPT_ROOT}/server/mariadb' -b / --lc-messages-dir /src/sql/share"
 )
 
 # options

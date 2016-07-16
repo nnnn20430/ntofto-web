@@ -1,1 +1,0 @@
-../../../builds/cgit/latest/cgit
