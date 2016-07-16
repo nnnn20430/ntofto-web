@@ -1,0 +1,5 @@
+to create initial db, run this command
+$ ../../builds/mariadb/latest/scripts/mysql_install_db \
+ --srcdir=../../builds/mariadb/latest \
+ --datadir=./data \
+ --user=$LOGNAME
