@@ -75,11 +75,11 @@ service_start() {
 		return
 	fi
 	eval "${START_INIT_COMMAND}"
-	process_pids=""
+	pid_list=""
 	for ((i = 0; i < ${#COMMAND_ARRAY[@]}; i++)); do
-		process_pids="${process_pids}$(runInBg "${COMMAND_ARRAY[$i]}")"$'\n'
+		pid_list="${pid_list}$(runInBg "${COMMAND_ARRAY[$i]}")"$'\n'
 	done
-	echo -n "${process_pids}" >./.Collected_PID
+	echo -n "${pid_list}" >./.Collected_PID
 }
 
 service_stop() {
@@ -87,8 +87,8 @@ service_stop() {
 		echo "Service is not running."
 		return
 	fi
-	process_pids=$(<./.Collected_PID)
-	for pid in ${process_pids}; do
+	pid_list=$(<./.Collected_PID)
+	for pid in ${pid_list}; do
 		if test -r /proc/"${pid}"/stat; then
 			kill -s SIGKILL -- -"$(awk '{print $5}' < /proc/"${pid}"/stat)"
 		else
