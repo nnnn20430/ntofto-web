@@ -102,6 +102,10 @@ service_stop() {
 main() {
 	cd "$SCRIPT_ROOT"
 	
+	if test ${UID} -ne 0; then
+		echo "!!! this script must be run as root"
+	fi
+	
 	case "${LAUNCHER_ACTION}" in
 		"start")
 			if "${LAUNCHER_QUIET}"; then
