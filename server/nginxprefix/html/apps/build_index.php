@@ -1,39 +1,39 @@
 <?php
 
 $indexStyle = <<<EOF
-body{
+body {
 	background-color: #121212;
 	color: #BBBBBB;
 	font-family: "Monospace", Monospace;
 	margin-top: 30px;
 }
-a{
+a {
 	color: #FFFFFF;
 	text-decoration: none;
 	font-weight: bold;
 	outline:0;
 }
-a:hover{
+a:hover {
 	color: #00BFFF;
 	text-decoration: none;
 }
-a:active{
+a:active {
 	color: #FF3300;
 	text-decoration: none;
 	outline:0;
 }
-.errorno{
+.errorno {
 	color: #ff3300;
 	font-size: 500%;
 	margin: 0px;
 }
-th{
+th {
 	font-size: 120%;
 	border-bottom-width: 3px;
 	border-bottom-style: solid;
 	border-bottom-color: #33FF00;
 }
-td{
+td {
 	padding-right: 30px;
 }
 EOF;
