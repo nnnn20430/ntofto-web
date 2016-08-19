@@ -112,8 +112,10 @@ function main() {
 	
 	$html = "";
 	
+	$html .= "<!DOCTYPE html>\n";
 	$html .= "<html>\n";
 	$html .= "<head>\n";
+	$html .= "<meta charset=\"UTF-8\">\n";
 	$html .= "<style>" . $indexStyle . "</style>\n";
 	$html .= "</head>\n";
 	$html .= "<body>\n";
