@@ -39,7 +39,7 @@ td {
 EOF;
 
 function sizeFilter($bytes, $decimals = 2) {
-	$label = array('B', 'KB', 'MB', 'GB', 'TB', 'PB');
+	$label = array('B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB');
 	$factor = floor((strlen($bytes) - 1) / 3);
 	$filteredSize = $bytes/pow(1024, $factor);
 	$filteredSize = sprintf("%.{$decimals}f", $filteredSize);
@@ -139,7 +139,7 @@ function main() {
 		if (strlen($name) > 30)
 			$name = substr($name, 0, 27) . '...';
 		$path = getRealPath($dir.$v);
-		$datemodified = date('Y\-m\-d G:i', getFileMTime($path));
+		$datemodified = date('Y\-m\-d H:i', getFileMTime($path));
 		$size = sizeFilter(getFileSize($path));
 		$hrefSuffix = '';
 		if(filetype($path) == 'dir') {
