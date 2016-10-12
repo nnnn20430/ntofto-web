@@ -1,0 +1,69 @@
+#	pony.eu.org
+########################################################################
+
+server {
+	listen 0.0.0.0:80;
+	listen [::]:80;
+	
+	listen 0.0.0.0:443 ssl;
+	listen [::]:443 ssl;
+	
+	server_name pony.eu.org *.pony.eu.org yp.mindcraftn5xddk4.onion;
+	
+	ssl_certificate secure/domains/pony.eu.org/cert.pem;
+	ssl_certificate_key secure/domains/pony.eu.org/privkey.pem;
+	set $redirect_to_https "";
+	if ($scheme = "http") {
+		set $redirect_to_https "${redirect_to_https}:1:";
+	}
+	if ($host = "yp.mindcraftn5xddk4.onion") {
+		set $redirect_to_https "${redirect_to_https}:0:";
+	}
+	if ($redirect_to_https = ":1:") {
+		rewrite ^ https://$host$request_uri? permanent;
+	}
+	
+	root html/ypmirror;
+	
+	ssi on;
+	error_page 404 /sorry/404.php;
+	error_page 403 /sorry/403.php;
+	autoindex off;
+	location / {
+		index index.php index.html index.htm;
+	}
+	
+	location ~ \.php$ {
+		types { text/html php; }
+	}
+	
+	#set $php_match_handle "";
+	
+	#if ($uri ~ "^(.+?\.php)(/.*)?$") {
+	#	set $php_match_handle "${php_match_handle}:1:";
+	#}
+	
+	#if ($uri ~ "^/server_function/.*$") {
+	#	set $php_match_handle "${php_match_handle}:0:";
+	#}
+	
+	#if ($php_match_handle = ":1:") {
+	#	rewrite ^/(.*)$ /server_function/PHP-SCRIPT-HANDLE-LOCATION/$1 last;
+	#}
+	
+	#location ~ ^/server_function/PHP-SCRIPT-HANDLE-LOCATION/(?<php_request>.*)$ {
+	#	if ($php_request ~* "^(.+?\.php)(/.*)?$") {
+	#		set $script_filename $1;
+	#		set $path_info $2;
+	#	}
+	#	root html/ypmirror;
+	#	fastcgi_index index.php;
+	#	include fastcgi_params;
+	#	fastcgi_param PATH_INFO $path_info;
+	#	fastcgi_param SCRIPT_FILENAME $document_root/$script_filename;
+	#	if (-e $document_root/$script_filename) {
+	#		fastcgi_pass php-handler;
+	#	}
+	#}
+	
+} ### END OF PONY.EU.ORG SERVER BLOCK

@@ -1,0 +1,133 @@
+
+#	primary domain
+#	plfgr.eu.org
+########################################################################
+
+server {
+	listen 0.0.0.0:80;
+	listen [::]:80;
+	
+	listen 0.0.0.0:443 ssl;
+	listen [::]:443 ssl;
+	
+	server_name plfgr.eu.org *.plfgr.eu.org;
+	
+	ssl_certificate secure/domains/plfgr.eu.org/cert.pem;
+	ssl_certificate_key secure/domains/plfgr.eu.org/privkey.pem;
+	ssl_ciphers kEECDH+ECDSA+AES256+AESGCM:kEECDH+AES256+AESGCM:kEDH+AES256+AESGCM:kEECDH+ECDSA+AESGCM:kEECDH+AESGCM:kEDH+AESGCM:!DES-CBC3-SHA:!SHA1:!aNULL:!eNULL:!MEDIUM:!LOW:!kECDH:!DSS:!MD5:!EXP:!PSK:!SRP:!CAMELLIA:!SEED;
+	ssl_dhparam secure/dhparam.pem;
+	ssl_ecdh_curve secp384r1;
+	ssl_prefer_server_ciphers on;
+	ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
+	ssl_session_cache builtin:1000 shared:SSL:10m;
+	ssl_session_timeout 10m;
+	add_header Strict-Transport-Security
+		"max-age=15768000; includeSubDomains; preload;";
+	if ($scheme = "http") {
+		rewrite ^ https://$host$request_uri? permanent;
+	}
+	proxy_redirect http:// $scheme://;
+	
+	location / {
+		proxy_buffering off;
+		proxy_http_version 1.1;
+		proxy_set_header Connection "keep-alive";
+		proxy_pass http://unix:server/nginxprefix/servers/master:/;
+		proxy_set_header Nginx-Loopback true;
+		proxy_read_timeout 999999;
+		proxy_send_timeout 999999;
+		proxy_set_header Host $http_host;
+		proxy_set_header X-Real-IP $remote_addr;
+		proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+		proxy_set_header X-Forwarded-Proto "$scheme";
+	}
+	
+	if ($host ~ "^phab\..*") {
+		rewrite "^/(?!server_function/)(.*)$" "/server_function/special_phab_domain_handle/$1" last;
+	}
+	
+	location ~ "/server_function/special_phab_domain_handle/(.*)" {
+		if ($uri ~* "^/server_function/special_phab_domain_handle/(.*)$") {
+			set $request_path $1;
+		}
+		proxy_buffering off;
+		proxy_http_version 1.1;
+		proxy_set_header Connection "keep-alive";
+		proxy_pass http://unix:server/nginxprefix/servers/phabricator:/$request_path$is_args$args;
+		proxy_set_header Nginx-Loopback true;
+		proxy_read_timeout 999999;
+		proxy_send_timeout 999999;
+		proxy_set_header Host $http_host;
+		proxy_set_header X-Real-IP $remote_addr;
+		proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+		proxy_set_header X-Forwarded-Proto "$scheme";
+		#for ws
+		proxy_set_header Upgrade $http_upgrade;
+		proxy_set_header Connection $connection_upgrade;
+	}
+	
+	if ($host ~ "^cloud\..*") {
+		rewrite "^/(?!server_function/)(.*)$" "/server_function/special_cloud_domain_handle/$1" last;
+	}
+	
+	location ~ "/server_function/special_cloud_domain_handle/(.*)" {
+		if ($uri ~* "^/server_function/special_cloud_domain_handle/(.*)$") {
+			set $request_path $1;
+		}
+		proxy_buffering off;
+		proxy_http_version 1.1;
+		proxy_set_header Connection "keep-alive";
+		proxy_pass http://unix:server/nginxprefix/servers/ownCloud:/$request_path$is_args$args;
+		proxy_set_header Nginx-Loopback true;
+		proxy_read_timeout 999999;
+		proxy_send_timeout 999999;
+		proxy_set_header Host $http_host;
+		proxy_set_header X-Real-IP $remote_addr;
+		proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+		proxy_set_header X-Forwarded-Proto "$scheme";
+		
+	}
+	
+	if ($host ~ "^social\..*") {
+		rewrite "^/(?!server_function/)(.*)$" "/server_function/special_social_domain_handle/$1" last;
+	}
+	
+	location ~ "/server_function/special_social_domain_handle/(.*)" {
+		if ($uri ~* "^/server_function/special_social_domain_handle/(.*)$") {
+			set $request_path $1;
+		}
+		proxy_buffering off;
+		proxy_http_version 1.1;
+		proxy_set_header Connection "keep-alive";
+		proxy_pass http://unix:server/nginxprefix/servers/gnusocial:/$request_path$is_args$args;
+		proxy_set_header Nginx-Loopback true;
+		proxy_read_timeout 999999;
+		proxy_send_timeout 999999;
+		proxy_set_header Host $http_host;
+		proxy_set_header X-Real-IP $remote_addr;
+		proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+		proxy_set_header X-Forwarded-Proto "$scheme";
+	}
+	
+	if ($host ~ "^sleet\..*") {# proxy to sleet's server (friend)
+		rewrite "^/(?!server_function/)(.*)$" "/server_function/special_sleet_domain_handle/$1" last;
+	}
+	
+	location ~ "/server_function/special_sleet_domain_handle/(.*)" {
+		if ($uri ~* "^/server_function/special_sleet_domain_handle/(.*)$") {
+			set $request_path $1;
+		}
+		proxy_buffering off;
+		proxy_http_version 1.1;
+		proxy_set_header Connection "keep-alive";
+		proxy_pass http://127.0.0.1:5068/$request_path$is_args$args;
+		proxy_read_timeout 999999;
+		proxy_send_timeout 999999;
+		proxy_set_header Host $http_host;
+		proxy_set_header X-Real-IP $remote_addr;
+		proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+		proxy_set_header X-Forwarded-Proto "$scheme";
+	}
+	
+} ### END OF PLFGR.EU.ORG SERVER BLOCK
+
