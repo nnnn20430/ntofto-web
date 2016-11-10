@@ -1,0 +1,18 @@
+START_INIT_COMMAND="
+mount -t tmpfs tmpfs -o rw,mode=1777,strictatime ${SCRIPT_ROOT}/server/nginxprefix/tmp
+mount --bind $(realpath ${SCRIPT_ROOT}/builds/mariadb/latest) ${SCRIPT_ROOT}/server/mariadb/src
+find ${SCRIPT_ROOT}/server/nginxprefix/servers -mindepth 1 -not -name .gitignore -delete
+"
+STOP_CLEANUP_COMMAND="
+umount -fl ${SCRIPT_ROOT}/server/nginxprefix/tmp
+umount -fl ${SCRIPT_ROOT}/server/mariadb/src
+"
+EXEC_ARRAY=(
+	"server/bin/nginx -p '${SCRIPT_ROOT}/server/nginxprefix/' -g 'daemon off;'"
+	"env UWSGI_MASTER=1 UWSGI_WORKERS=1 server/bin/uwsgi --chdir '${SCRIPT_ROOT}/server/nginxprefix/' -s '${SCRIPT_ROOT}/server/nginxprefix/handlers/uwsgi' --ini '${SCRIPT_ROOT}/server/etc/uwsgi.ini'"
+	"env PHP_FCGI_CHILDREN=1 server/bin/php-cgi -b '${SCRIPT_ROOT}/server/nginxprefix/handlers/php-cgi' -c '${SCRIPT_ROOT}/server/etc/php.ini'"
+	"server/bin/php-fpm -c '${SCRIPT_ROOT}/server/etc/php.ini' -p '${SCRIPT_ROOT}/server/nginxprefix' -y '${SCRIPT_ROOT}/server/etc/php-fpm.conf' -FR"
+	"server/bin/fossil server --scgi --localhost --port 9003 --repolist '${SCRIPT_ROOT}/server/nginxprefix/html/fossil/root'"
+	"server/bin/git-daemon --port=9418 --base-path='${SCRIPT_ROOT}/server/nginxprefix/html/gitweb/root' --export-all"
+	"server/bin/mysqld --defaults-file='${SCRIPT_ROOT}/server/mariadb/etc/my.cnf' --user root -r '${SCRIPT_ROOT}/server/mariadb' -b / --lc-messages-dir /src/sql/share"
+)
