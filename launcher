@@ -5,24 +5,11 @@ declare -r INVOKED_DIR="$PWD"
 declare -r SCRIPT_ROOT=$(cd "${0%/*}" && echo "$PWD")
 
 # variables
-START_INIT_COMMAND="
-mount -t tmpfs tmpfs -o rw,mode=1777,strictatime ${SCRIPT_ROOT}/server/nginxprefix/tmp
-mount --bind $(realpath ${SCRIPT_ROOT}/builds/mariadb/latest) ${SCRIPT_ROOT}/server/mariadb/src
-find ${SCRIPT_ROOT}/server/nginxprefix/servers -mindepth 1 -not -name .gitignore -delete
-"
-STOP_CLEANUP_COMMAND="
-umount -fl ${SCRIPT_ROOT}/server/nginxprefix/tmp
-umount -fl ${SCRIPT_ROOT}/server/mariadb/src
-"
-COMMAND_ARRAY=(
-	"server/bin/nginx -p '${SCRIPT_ROOT}/server/nginxprefix/' -g 'daemon off;'"
-	"env UWSGI_MASTER=1 UWSGI_WORKERS=1 server/bin/uwsgi --chdir '${SCRIPT_ROOT}/server/nginxprefix/' -s '${SCRIPT_ROOT}/server/nginxprefix/handlers/uwsgi' --ini '${SCRIPT_ROOT}/server/etc/uwsgi.ini'"
-	"env PHP_FCGI_CHILDREN=1 server/bin/php-cgi -b '${SCRIPT_ROOT}/server/nginxprefix/handlers/php-cgi' -c '${SCRIPT_ROOT}/server/etc/php.ini'"
-	"server/bin/php-fpm -c '${SCRIPT_ROOT}/server/etc/php.ini' -p '${SCRIPT_ROOT}/server/nginxprefix' -y '${SCRIPT_ROOT}/server/etc/php-fpm.conf' -FR"
-	"server/bin/fossil server --scgi --localhost --port 9003 --repolist '${SCRIPT_ROOT}/server/nginxprefix/html/fossil/root'"
-	"server/bin/git-daemon --port=9418 --base-path='${SCRIPT_ROOT}/server/nginxprefix/html/gitweb/root' --export-all"
-	"server/bin/mysqld --defaults-file='${SCRIPT_ROOT}/server/mariadb/etc/my.cnf' --user root -r '${SCRIPT_ROOT}/server/mariadb' -b / --lc-messages-dir /src/sql/share"
-)
+LAUNCHER_SOURCE=".launcher_source"
+LAUNCHER_PID_LIST=".launched_PID"
+START_INIT_COMMAND=""
+STOP_CLEANUP_COMMAND=""
+EXEC_ARRAY=()
 
 # options
 LAUNCHER_ACTION=""
@@ -44,7 +31,14 @@ print_help() {
 	echo "$0 [-q] -a start|stop"
 }
 
-runInBg() {
+check_source() {
+	if test -z "${COMMAND_ARRAY[*]}" &&
+	   test -e "${LAUNCHER_SOURCE}"; then
+		source "${LAUNCHER_SOURCE}"
+	fi
+}
+
+fork_exec() {
 	eval set -- "$1"
 	local SETSID=()
 	if command -v perl >/dev/null 2>&1; then
@@ -69,25 +63,25 @@ runInBg() {
 	)
 }
 
-service_start() {
-	if test -e "./.Collected_PID";then
-		echo "Service still running."
+launcher_start() {
+	if test -e "${LAUNCHER_PID_LIST}";then
+		echo "Still running."
 		return
 	fi
 	eval "${START_INIT_COMMAND}"
 	pid_list=""
-	for ((i = 0; i < ${#COMMAND_ARRAY[@]}; i++)); do
-		pid_list="${pid_list}$(runInBg "${COMMAND_ARRAY[$i]}")"$'\n'
+	for ((i = 0; i < ${#EXEC_ARRAY[@]}; i++)); do
+		pid_list="${pid_list}$(fork_exec "${EXEC_ARRAY[$i]}")"$'\n'
 	done
-	echo -n "${pid_list}" >./.Collected_PID
+	echo -n "${pid_list}" > "${LAUNCHER_PID_LIST}"
 }
 
-service_stop() {
-	if test -e "./.Collected_PID";then :; else
-		echo "Service is not running."
+launcher_stop() {
+	if test -e "${LAUNCHER_PID_LIST}";then :; else
+		echo "Nothing is running."
 		return
 	fi
-	pid_list=$(<./.Collected_PID)
+	pid_list=$(< "${LAUNCHER_PID_LIST}" )
 	for pid in ${pid_list}; do
 		if test -r /proc/"${pid}"/stat; then
 			kill -s SIGKILL -- -"$(awk '{print $5}' < /proc/"${pid}"/stat)"
@@ -95,7 +89,7 @@ service_stop() {
 			kill -s SIGKILL -- "${pid}"
 		fi
 	done
-	rm ./.Collected_PID
+	rm "${LAUNCHER_PID_LIST}"
 	eval "${STOP_CLEANUP_COMMAND}"
 }
 
@@ -106,19 +100,21 @@ main() {
 		echo "!!! this script must be run as root"
 	fi
 	
+	check_source
+	
 	case "${LAUNCHER_ACTION}" in
 		"start")
 			if "${LAUNCHER_QUIET}"; then
-				service_start >/dev/null 2>&1
+				launcher_start >/dev/null 2>&1
 			else
-				service_start
+				launcher_start
 			fi
 			;;
 		"stop")
 			if "${LAUNCHER_QUIET}"; then
-				service_stop >/dev/null 2>&1
+				launcher_stop >/dev/null 2>&1
 			else
-				service_stop
+				launcher_stop
 			fi
 			;;
 		*)
