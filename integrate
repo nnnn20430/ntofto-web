@@ -69,6 +69,7 @@ prepare_users() {(
 		echo_exec useradd \
 		 -c "NTOFTO Web Package" \
 		 -d "${SCRIPT_ROOT}" \
+		 -p '*' \
 		 -Mr "ntofto-web" || fail
 		echo -n '... '
 	fi
