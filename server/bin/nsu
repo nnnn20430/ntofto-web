@@ -1,0 +1,24 @@
+#!/bin/bash
+
+if [ $# -lt 2 ]; then
+	echo "$0 USER COMMAND..."
+	exit 1
+fi
+
+USER="$1"; shift
+
+CODE="$(cat <<END_HEREDOC
+use POSIX;
+my @pwr=getpwnam("${USER}");
+if (!@pwr) {
+	print "user doesn't exist\n";
+	exit 1;
+}
+POSIX::setgid(\$pwr[2]);
+POSIX::setuid(\$pwr[2]);
+exec @ARGV;
+END_HEREDOC
+)"
+
+exec 'perl' '-e' "${CODE}" '--' "$@"
+

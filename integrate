@@ -1,0 +1,161 @@
+#!/bin/bash
+
+# constants
+declare -r INVOKED_DIR="$PWD"
+declare -r SCRIPT_ROOT=$(cd "${0%/*}" && echo "$PWD")
+
+# print the command and execute it
+echo_exec() {
+	echo "$@"
+	"$@"
+}
+
+confirm_install_dir() {(
+	status=0
+	error=""
+
+	finish() {
+		if test $status -eq 0; then
+			echo "OK"
+			return $status
+		else
+			echo "FAIL"
+			echo $error
+			return $status
+		fi
+	}
+
+	fail() {
+		error="anomaly detected in install directory"
+		status=1
+	}
+
+	echo -n "checking if the script was run correctly... "
+
+	test -d "./builds" || fail
+	test -d "./server" || fail
+	test -d "./src" || fail
+	test -x "./integrate" || fail
+	test -x "./launcher" || fail
+
+	finish
+)}
+
+prepare_users() {(
+	status=0
+	error=""
+
+	finish() {
+		if test $status -eq 0; then
+			echo "OK"
+			return $status
+		else
+			echo "FAIL"
+			echo $error
+			return $status
+		fi
+	}
+
+	fail() {
+		error="couldn't create users/groups"
+		status=1
+	}
+
+	echo -n "making sure appropriate users/groups exist... "
+
+	if id "ntofto-web" >/dev/null 2>&1;then :; else
+		echo
+		echo -n '> '
+		echo_exec useradd \
+		 -c "NTOFTO Web Package" \
+		 -d "${SCRIPT_ROOT}" \
+		 -Mr "ntofto-web" || fail
+		echo -n '... '
+	fi
+
+	finish
+)}
+
+set_dir_own() {
+	status=0
+	error=""
+
+	finish() {
+		if test $status -eq 0; then
+			echo "OK"
+			return $status
+		else
+			echo "FAIL"
+			echo $error
+			return $status
+		fi
+	}
+
+	fail() {
+		error="couldn't claim directory ownership"
+		status=1
+	}
+
+	echo -n "setting directory ownership... "
+
+	echo
+	echo -n '> '
+	echo_exec chown -R "ntofto-web:ntofto-web" "${SCRIPT_ROOT}" || fail
+	echo -n '... '
+
+	finish
+}
+
+set_dir_mod() {
+	status=0
+	error=""
+
+	finish() {
+		if test $status -eq 0; then
+			echo "OK"
+			return $status
+		else
+			echo "FAIL"
+			echo $error
+			return $status
+		fi
+	}
+
+	fail() {
+		error="couldn't set directory modes"
+		status=1
+	}
+
+	echo -n "setting directory modes... "
+
+	echo
+	echo -n '> '
+	echo_exec chmod 02770 "${SCRIPT_ROOT}" || fail
+	echo -n '... '
+
+	finish
+}
+
+main() {
+	cd "$SCRIPT_ROOT"
+
+	if test ${UID} -ne 0; then
+		echo "!!! this script must be run as root"
+	fi
+
+	fail() {
+		echo
+		echo "Aborting"
+		exit 1
+	}
+
+	confirm_install_dir || fail
+	echo
+	prepare_users || fail
+	echo
+	set_dir_own || fail
+	echo
+	set_dir_mod || fail
+}
+
+main

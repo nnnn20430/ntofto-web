@@ -7,6 +7,7 @@ declare -r SCRIPT_ROOT=$(cd "${0%/*}" && echo "$PWD")
 # variables
 LAUNCHER_SOURCE=".launcher_source"
 LAUNCHER_PID_LIST=".launched_PID"
+LAUNCHER_NEEDS_ROOT="false"
 START_INIT_COMMAND=""
 STOP_CLEANUP_COMMAND=""
 EXEC_ARRAY=()
@@ -32,7 +33,7 @@ print_help() {
 }
 
 check_source() {
-	if test -z "${COMMAND_ARRAY[*]}" &&
+	if test -z "${EXEC_ARRAY[*]}" &&
 	   test -e "${LAUNCHER_SOURCE}"; then
 		source "${LAUNCHER_SOURCE}"
 	fi
@@ -54,7 +55,7 @@ fork_exec() {
 			[[ -t 0 ]] && exec </dev/null
 			[[ -t 1 ]] && exec >/dev/null
 			[[ -t 2 ]] && exec 2>/dev/null
-			trap '' 1 2 
+			trap '' 1 2
 			eval exec {3..255}\>\&-
 			umask 0022
 			exec "${SETSID[@]}" "$@"
@@ -95,13 +96,14 @@ launcher_stop() {
 
 main() {
 	cd "$SCRIPT_ROOT"
-	
-	if test ${UID} -ne 0; then
-		echo "!!! this script must be run as root"
-	fi
-	
+
 	check_source
-	
+
+	if test "${LAUNCHER_NEEDS_ROOT}" = "true" && test ${UID} -ne 0; then
+		echo "!!! this script must be run as root"
+		exit 1
+	fi
+
 	case "${LAUNCHER_ACTION}" in
 		"start")
 			if "${LAUNCHER_QUIET}"; then
@@ -121,7 +123,7 @@ main() {
 			print_help
 			;;
 	esac
-	
+
 	exit 0
 }
 

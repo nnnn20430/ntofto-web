@@ -1,0 +1,15 @@
+nnnn20430's stupid web service package.
+
+Includes nginx, uwsgi, php, mariadb, git, fossil.
+
+software in src/ needs to be unpacked and build in appropriate builds/(software)/(software_src_dir)
+then link to latest software build dir in builds/(software)/latest -> (software_src_dir)
+will maybe eventually automate this using ./build script
+
+to create user/group and set appropriate file permissions:
+root # ./integrate
+
+start the web service:
+root # ./launcher -a start
+or to stop it:
+root # ./launcher -a stop
