@@ -5,12 +5,12 @@
 server {
 	listen 0.0.0.0:80;
 	listen [::]:80;
-	
+
 	listen 0.0.0.0:443 ssl;
 	listen [::]:443 ssl;
-	
+
 	server_name mindcraft.si.eu.org *.mindcraft.si.eu.org;
-	
+
 	ssl_certificate secure/domains/mindcraft.si.eu.org/cert.pem;
 	ssl_certificate_key secure/domains/mindcraft.si.eu.org/privkey.pem;
 	ssl_ciphers kEDH+AES256+AESGCM:kEDH+AESGCM:!DES-CBC3-SHA:!SHA1:!aNULL:!eNULL:!MEDIUM:!LOW:!kECDH:!DSS:!MD5:!EXP:!PSK:!SRP:!CAMELLIA:!SEED;
@@ -24,12 +24,12 @@ server {
 	if ($scheme = "http") {
 		rewrite ^ https://$host$request_uri? permanent;
 	}
-	
+
 	location / {
 		proxy_buffering off;
 		proxy_http_version 1.1;
 		proxy_set_header Connection "keep-alive";
-		proxy_pass http://unix:server/nginxprefix/servers/master:/;
+		proxy_pass http://unix:pkg/nginxprefix/servers/master:/;
 		proxy_set_header Nginx-Loopback true;
 		proxy_read_timeout 999999;
 		proxy_send_timeout 999999;
@@ -38,5 +38,5 @@ server {
 		proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
 		proxy_set_header X-Forwarded-Proto "$scheme";
 	}
-	
+
 } ### END OF MINDCRAFT.SI.EU.ORG SERVER BLOCK

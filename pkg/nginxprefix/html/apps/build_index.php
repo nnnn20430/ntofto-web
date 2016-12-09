@@ -105,13 +105,13 @@ function getFileMTime($path) {
 
 function main() {
 	global $indexStyle;
-	
+
 	$dir = $_SERVER['PATH_ROOT'] . $_SERVER['PATH_INFO'];
 	$files = array_diff(scandir($dir), array('.', '..'));
 	$files = filesGroupDir($dir, $files);
-	
+
 	$html = "";
-	
+
 	$html .= "<!DOCTYPE html>\n";
 	$html .= "<html>\n";
 	$html .= "<head>\n";
@@ -121,19 +121,19 @@ function main() {
 	$html .= "<body>\n";
 	$html .= "<h2>Index of " . $_SERVER['PATH_INFO'] . "</h2>\n";
 	$html .= "<table>\n";
-	
+
 	$html .= "<tr>\n";
 	$html .= "<th>Name</th>\n";
 	$html .= "<th>Size</th>\n";
 	$html .= "<th>Time</th>\n";
 	$html .= "</tr>\n";
-	
+
 	$html .= "<tr>\n";
 	$html .= '<td><a href="..">..</a></td>'."\n";
 	$html .= "<td></td>\n";
 	$html .= "<td></td>\n";
 	$html .= "</tr>\n";
-	
+
 	foreach ($files as $k => $v) {
 		$name = $v;
 		if (strlen($name) > 30)
@@ -146,18 +146,17 @@ function main() {
 			$hrefSuffix = '/';
 			$size = "-";
 		}
-		
 		$html .= "<tr>\n";
 		$html .= '<td><a href="' . $v.$hrefSuffix . '">' . $name.$hrefSuffix . '</a></td>'."\n";
 		$html .= "<td>" . $size . "</td>\n";
 		$html .= "<td>" . $datemodified . "</td>\n";
 		$html .= "</tr>\n";
 	}
-	
-	$html .= "<table>\n";
-	$html .= "<body>\n";
-	$html .= "<html>\n";
-	
+
+	$html .= "</table>\n";
+	$html .= "</body>\n";
+	$html .= "</html>\n";
+
 	echo $html;
 }
 
