@@ -1,1 +1,3 @@
-../../builds/git/latest/git-daemon
+#!/bin/bash
+
+source "$(SCRIPT_PATH="$(readlink -f "$0")"; cd "${SCRIPT_PATH%/*}" && echo "$PWD")/git"

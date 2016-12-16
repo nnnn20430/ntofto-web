@@ -1,1 +1,25 @@
-../../builds/git/latest/git
+#!/bin/bash
+
+# constants
+declare -r INVOKED_DIR="$PWD"
+declare -r SCRIPT_PATH="$(readlink -f "$0")"
+declare -r SCRIPT_ROOT="$(cd "${SCRIPT_PATH%/*}" && echo "$PWD")"
+
+# variables
+GIT_SRC="$(cd ${SCRIPT_ROOT}/../../builds/git/latest && echo "$PWD")"
+COMMAND="${GIT_SRC}/${0##*/}"
+
+# exports
+export GIT_EXEC_PATH="${GIT_SRC}"
+export GIT_TEMPLATE_DIR="${GIT_SRC}/templates/blt"
+export GITPERLLIB="${GIT_SRC}/perl/blib/lib"
+export GIT_TEXTDOMAINDIR="${GIT_SRC}/po/build/locale"
+
+if test ! -x "${COMMAND}"; then
+	echo "executable not found"
+	exit 1
+fi
+
+exec "${COMMAND}" "$@"
+
+exit 1
