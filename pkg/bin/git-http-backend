@@ -1,3 +1,5 @@
 #!/bin/bash
 
+#move to perl
+
 source "$(SCRIPT_PATH="$(readlink -f "$0")"; cd "${SCRIPT_PATH%/*}" && echo "$PWD")/git"
