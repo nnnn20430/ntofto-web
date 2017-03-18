@@ -22,11 +22,6 @@ a:active {
 	text-decoration: none;
 	outline:0;
 }
-.errorno {
-	color: #ff3300;
-	font-size: 500%;
-	margin: 0px;
-}
 th {
 	font-size: 120%;
 	border-bottom-width: 3px;
