@@ -31,6 +31,9 @@ th {
 td {
 	padding-right: 30px;
 }
+h2 {
+	white-space: nowrap;
+}
 EOF;
 
 function sizeFilter($bytes, $decimals = 2) {
@@ -47,7 +50,7 @@ function filesGroupDir($dir, $array) {
 	$fileArr = [];
 	foreach ($array as $k => $v) {
 		$path = getRealPath($dir.$v);
-		if(filetype($path) == 'dir') {
+		if(file_exists($path) && (filetype($path) == 'dir')) {
 			$dirArr = array_merge($dirArr, [$v]);
 		} else {
 			$fileArr = array_merge($fileArr, [$v]);
@@ -58,7 +61,7 @@ function filesGroupDir($dir, $array) {
 
 function getRealPath($path) {
 	$rpath = realpath($path);
-	if ($rpath === false) {
+	if (($rpath === false) && file_exists($path)) {
 		$escapedPath = escapeshellarg($path);
 		$execOutput = [];
 		$execReturn = 1;
@@ -72,7 +75,7 @@ function getRealPath($path) {
 
 function getFileSize($path) {
 	$size = filesize($path);
-	if ($size === false) {
+	if (($size === false) && file_exists($path)) {
 		$escapedPath = escapeshellarg($path);
 		$execOutput = [];
 		$execReturn = 1;
@@ -86,7 +89,7 @@ function getFileSize($path) {
 
 function getFileMTime($path) {
 	$mtime = filemtime($path);
-	if ($mtime === false) {
+	if (($mtime === false) && file_exists($path)) {
 		$escapedPath = escapeshellarg($path);
 		$execOutput = [];
 		$execReturn = 1;
@@ -101,9 +104,13 @@ function getFileMTime($path) {
 function main() {
 	global $indexStyle;
 
+	set_time_limit(0);
+
 	$dir = $_SERVER['PATH_ROOT'] . $_SERVER['PATH_INFO'];
 	$files = array_diff(scandir($dir), array('.', '..'));
-	$files = filesGroupDir($dir, $files);
+	if (count($files) < 1000) {
+		$files = filesGroupDir($dir, $files);
+	}
 
 	$html = "";
 
@@ -114,7 +121,7 @@ function main() {
 	$html .= "<style>" . $indexStyle . "</style>\n";
 	$html .= "</head>\n";
 	$html .= "<body>\n";
-	$html .= "<h2>Index of " . $_SERVER['PATH_INFO'] . "</h2>\n";
+	$html .= "<h2><pre>Index of " . $_SERVER['PATH_INFO'] . "</pre></h2>\n";
 	$html .= "<table>\n";
 
 	$html .= "<tr>\n";
@@ -131,13 +138,13 @@ function main() {
 
 	foreach ($files as $k => $v) {
 		$name = $v;
-		if (strlen($name) > 30)
-			$name = substr($name, 0, 27) . '...';
+		if (strlen($name) > 40)
+			$name = substr($name, 0, 37) . '...';
 		$path = getRealPath($dir.$v);
-		$datemodified = date('Y\-m\-d H:i', getFileMTime($path));
-		$size = sizeFilter(getFileSize($path));
+		$datemodified = (file_exists($path) ? date('Y\-m\-d H:i', getFileMTime($path)) : '-');
+		$size = (file_exists($path) ? sizeFilter(getFileSize($path)) : '-');
 		$hrefSuffix = '';
-		if(filetype($path) == 'dir') {
+		if(file_exists($path) && (filetype($path) == 'dir')) {
 			$hrefSuffix = '/';
 			$size = "-";
 		}
