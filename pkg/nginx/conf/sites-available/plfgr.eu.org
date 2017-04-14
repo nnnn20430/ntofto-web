@@ -32,7 +32,7 @@ server {
 		proxy_buffering off;
 		proxy_http_version 1.1;
 		proxy_set_header Connection "keep-alive";
-		proxy_pass http://unix:pkg/nginxprefix/servers/master:/;
+		proxy_pass http://unix:pkg/nginx/servers/master:/;
 		proxy_set_header Nginx-Loopback true;
 		proxy_read_timeout 999999;
 		proxy_send_timeout 999999;
@@ -53,7 +53,7 @@ server {
 		proxy_buffering off;
 		proxy_http_version 1.1;
 		proxy_set_header Connection "keep-alive";
-		proxy_pass http://unix:pkg/nginxprefix/servers/phabricator:/$request_path$is_args$args;
+		proxy_pass http://unix:pkg/nginx/servers/phabricator:/$request_path$is_args$args;
 		proxy_set_header Nginx-Loopback true;
 		proxy_read_timeout 999999;
 		proxy_send_timeout 999999;
@@ -77,7 +77,7 @@ server {
 		proxy_buffering off;
 		proxy_http_version 1.1;
 		proxy_set_header Connection "keep-alive";
-		proxy_pass http://unix:pkg/nginxprefix/servers/nextcloud:/$request_path$is_args$args;
+		proxy_pass http://unix:pkg/nginx/servers/nextcloud:/$request_path$is_args$args;
 		proxy_set_header Nginx-Loopback true;
 		proxy_read_timeout 999999;
 		proxy_send_timeout 999999;
@@ -98,7 +98,7 @@ server {
 		proxy_buffering off;
 		proxy_http_version 1.1;
 		proxy_set_header Connection "keep-alive";
-		proxy_pass http://unix:pkg/nginxprefix/servers/gnusocial:/$request_path$is_args$args;
+		proxy_pass http://unix:pkg/nginx/servers/gnusocial:/$request_path$is_args$args;
 		proxy_set_header Nginx-Loopback true;
 		proxy_read_timeout 999999;
 		proxy_send_timeout 999999;
